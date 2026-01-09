@@ -1,7 +1,7 @@
 {
   "name": "pas6510",
   "version": "1.0.0",
-  "description": "This is a optimizing Pascal-ish compiler for the 6510 CPU. \r It is meant to run on a PC and compiles to 6510 assembly source code which then can be assembled using",
+  "description": "Pascal-like compiler targeting the MOS 6510 CPU (Commodore 64)",
   "main": "dist/index.js",
   "bin": {
     "pas6510": "dist/cli.js"
@@ -10,6 +10,7 @@
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx watch src/cli.ts",
+    "examples": "node -e \"require('fs').readdirSync('examples').filter(f=>f.endsWith('.pas')).forEach(f=>require('child_process').execSync('node dist/cli.js examples/'+f,{stdio:'inherit'}))\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

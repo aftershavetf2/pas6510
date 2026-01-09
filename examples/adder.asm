@@ -1,7 +1,10 @@
 ; pas6510 compiled program: adder
 ;
 
-  .org $1000
+  .org $0801
+
+; BASIC stub: 10 SYS 2062
+  .byte $0b, $08, $0a, $00, $9e, $32, $30, $36, $32, $00, $00, $00
 
 ; Program start
 start:

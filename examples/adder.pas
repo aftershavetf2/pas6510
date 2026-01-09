@@ -1,4 +1,3 @@
-{ORG 0x1000}
 program adder
 
 proc main()
