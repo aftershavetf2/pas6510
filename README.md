@@ -1,6 +1,6 @@
 # pas6510
 
-A Pascal-like compiler targeting the MOS 6510 CPU (Commodore 64).
+A Pascal-like not-at-all-finished compiler targeting the MOS 6510 CPU (Commodore 64).
 
 ## Installation
 
@@ -22,22 +22,22 @@ pas6510 program.pas --asm-only   # Assembly output only
 ## Example
 
 ```pascal
-program adder
+program adder2
 
 proc main()
     var sum : u16;
-    var i : u8;
+    var i: u8;
 
     sum := 0;
     for i = 0 to 10 do
         sum := sum + i;
+        write_u16_ln(sum);
     end;
-
-    write_u16_ln(sum);
 end;
 ```
 
-Output: `55`
+Output:
+![Alt text](/screenshots/adder2.png?raw=true "Result of running adder2.prg")
 
 ## Language
 
