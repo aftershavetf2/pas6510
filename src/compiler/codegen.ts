@@ -524,6 +524,11 @@ export class CodeGenerator {
     if (stmt.args.length === 1 && stmt.name === "write_u16_ln") {
       // Pass 16-bit argument in A (low) and X (high)
       this.generateExpr16(stmt.args[0]);
+    } else if (stmt.args.length === 1 && stmt.name === "print_char") {
+      // Print single character - pass in A
+      this.generateExpr8(stmt.args[0]);
+      this.emit(`  jsr $ffd2  ; CHROUT`);
+      return;
     } else if (stmt.args.length === 1) {
       // Default: pass first argument in A
       this.generateExpr8(stmt.args[0]);
@@ -720,7 +725,7 @@ export class CodeGenerator {
     this.emit("");
 
     // Temporary storage
-    this.emit("_tmp: .byte 0");
+    this.emit("_tmp: .byte 0, 0");
     this.emit("_tmp16: .byte 0, 0");
     this.emit("");
 
