@@ -10,8 +10,8 @@
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx watch src/cli.ts",
-    "examples": "node -e \"require('fs').readdirSync('examples').filter(f=>f.endsWith('.pas')).forEach(f=>require('child_process').execSync('node dist/cli.js examples/'+f,{stdio:'inherit'}))\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "tests": "npm run build && node scripts/test.js",
+    "examples": "node scripts/test.js"
   },
   "repository": {
     "type": "git",

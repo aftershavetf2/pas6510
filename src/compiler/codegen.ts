@@ -22,20 +22,42 @@ interface Variable {
   size: number;
 }
 
+interface FunctionSignature {
+  params: VarDecl[];
+  returnType: DataType | null;  // null for procedures
+}
+
 export class CodeGenerator {
   private output: string[] = [];
   private variables: Map<string, Variable> = new Map();
+  private functionSignatures: Map<string, FunctionSignature> = new Map();
   private nextZpAddress: number = 0x02; // Start after zero page system locations
   private nextRamAddress: number = 0x0800; // Start of free RAM on C64
   private labelCounter: number = 0;
   private currentProc: string = "";
+  private currentReturnType: DataType | null = null;
 
   generate(program: ProgramNode): string {
     this.output = [];
     this.variables.clear();
+    this.functionSignatures.clear();
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
     this.labelCounter = 0;
+
+    // Build function signature table
+    for (const proc of program.procedures) {
+      this.functionSignatures.set(proc.name, {
+        params: proc.params,
+        returnType: null,
+      });
+    }
+    for (const func of program.functions) {
+      this.functionSignatures.set(func.name, {
+        params: func.params,
+        returnType: func.returnType,
+      });
+    }
 
     // Header
     this.emit(`; pas6510 compiled program: ${program.name}`);
@@ -98,11 +120,44 @@ export class CodeGenerator {
   generateFromResolved(resolved: ResolvedProgram): string {
     this.output = [];
     this.variables.clear();
+    this.functionSignatures.clear();
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
     this.labelCounter = 0;
 
     const mainProgram = resolved.mainModule.program;
+
+    // Build function signature table from all modules
+    for (const dep of resolved.dependencies) {
+      for (const proc of dep.program.procedures) {
+        if (proc.isPublic || dep.filePath === resolved.mainModule.filePath) {
+          this.functionSignatures.set(proc.name, {
+            params: proc.params,
+            returnType: null,
+          });
+        }
+      }
+      for (const func of dep.program.functions) {
+        if (func.isPublic || dep.filePath === resolved.mainModule.filePath) {
+          this.functionSignatures.set(func.name, {
+            params: func.params,
+            returnType: func.returnType,
+          });
+        }
+      }
+    }
+    for (const proc of mainProgram.procedures) {
+      this.functionSignatures.set(proc.name, {
+        params: proc.params,
+        returnType: null,
+      });
+    }
+    for (const func of mainProgram.functions) {
+      this.functionSignatures.set(func.name, {
+        params: func.params,
+        returnType: func.returnType,
+      });
+    }
 
     // Header
     this.emit(`; pas6510 compiled program: ${mainProgram.name}`);
@@ -271,8 +326,14 @@ export class CodeGenerator {
 
   private generateProcedure(proc: ProcedureNode): void {
     this.currentProc = proc.name;
+    this.currentReturnType = null;
     this.emit(`; Procedure: ${proc.name}`);
     this.emit(`${proc.name}:`);
+
+    // Allocate parameters as variables (caller stores values before jsr)
+    for (const param of proc.params) {
+      this.allocateVariable(param);
+    }
 
     // Allocate local variables
     for (const local of proc.locals) {
@@ -290,8 +351,14 @@ export class CodeGenerator {
 
   private generateFunction(func: FunctionNode): void {
     this.currentProc = func.name;
+    this.currentReturnType = func.returnType;
     this.emit(`; Function: ${func.name}`);
     this.emit(`${func.name}:`);
+
+    // Allocate parameters as variables (caller stores values before jsr)
+    for (const param of func.params) {
+      this.allocateVariable(param);
+    }
 
     // Allocate local variables
     for (const local of func.locals) {
@@ -545,36 +612,60 @@ export class CodeGenerator {
 
   private generateCall(stmt: { name: string; args: ExpressionNode[] }): void {
     // Handle built-in functions with arguments
-    if (stmt.args.length === 1 && stmt.name === "write_u16_ln") {
+    if (stmt.name === "write_u16_ln") {
       // Pass 16-bit argument in A (low) and X (high)
       this.generateExpr16(stmt.args[0]);
-    } else if (stmt.args.length === 1 && stmt.name === "print_char") {
+      this.emit(`  jsr ${stmt.name}`);
+      return;
+    } else if (stmt.name === "print_char") {
       // Print single character - pass in A
       this.generateExpr8(stmt.args[0]);
       this.emit(`  jsr $ffd2  ; CHROUT`);
       return;
-    } else if (stmt.args.length === 2 && stmt.name === "poke") {
+    } else if (stmt.name === "poke") {
       // poke(addr, value) - write value to memory address
-      // First, evaluate address (16-bit) and store it
       this.generateExpr16(stmt.args[0]);
       this.emit(`  sta _poke_addr`);
       this.emit(`  stx _poke_addr+1`);
-      // Then evaluate value (8-bit)
       this.generateExpr8(stmt.args[1]);
-      // Store to address using indirect addressing
       this.emit(`  ldy #0`);
       this.emit(`  sta (_poke_addr),y`);
       return;
-    } else if (stmt.args.length === 1) {
-      // Default: pass first argument in A
-      this.generateExpr8(stmt.args[0]);
+    }
+
+    // Look up function signature for user-defined functions
+    const sig = this.functionSignatures.get(stmt.name);
+    if (sig && sig.params.length > 0) {
+      // Store arguments to parameter variables
+      for (let i = 0; i < stmt.args.length && i < sig.params.length; i++) {
+        const param = sig.params[i];
+        const paramType = param.varType;
+        const is16Bit = paramType === "i16" || paramType === "u16" || paramType === "ptr";
+
+        if (is16Bit) {
+          this.generateExpr16(stmt.args[i]);
+          this.emit(`  sta ${this.varLabel(param.name)}`);
+          this.emit(`  stx ${this.varLabel(param.name)}+1`);
+        } else {
+          this.generateExpr8(stmt.args[i]);
+          this.emit(`  sta ${this.varLabel(param.name)}`);
+        }
+      }
     }
     this.emit(`  jsr ${stmt.name}`);
   }
 
   private generateReturn(stmt: { value?: ExpressionNode }): void {
     if (stmt.value) {
-      this.generateExpr8(stmt.value);
+      // Use 16-bit return for i16, u16, ptr types
+      const is16Bit = this.currentReturnType === "i16" ||
+                      this.currentReturnType === "u16" ||
+                      this.currentReturnType === "ptr";
+      if (is16Bit) {
+        this.generateExpr16(stmt.value);
+      } else {
+        this.generateExpr8(stmt.value);
+      }
     }
     this.emit(`  rts`);
   }
@@ -625,9 +716,23 @@ export class CodeGenerator {
           this.emit(`  ldy #0`);
           this.emit(`  lda (_poke_addr),y`);
         } else {
-          // Regular function call
-          if (expr.args.length === 1) {
-            this.generateExpr8(expr.args[0]);
+          // Regular function call - store arguments to parameter variables
+          const sig = this.functionSignatures.get(expr.name);
+          if (sig && sig.params.length > 0) {
+            for (let i = 0; i < expr.args.length && i < sig.params.length; i++) {
+              const param = sig.params[i];
+              const paramIs16Bit = param.varType === "i16" ||
+                                   param.varType === "u16" ||
+                                   param.varType === "ptr";
+              if (paramIs16Bit) {
+                this.generateExpr16(expr.args[i]);
+                this.emit(`  sta ${this.varLabel(param.name)}`);
+                this.emit(`  stx ${this.varLabel(param.name)}+1`);
+              } else {
+                this.generateExpr8(expr.args[i]);
+                this.emit(`  sta ${this.varLabel(param.name)}`);
+              }
+            }
           }
           this.emit(`  jsr ${expr.name}`);
         }
@@ -709,6 +814,40 @@ export class CodeGenerator {
 
       case "BinaryOp":
         this.generateBinaryOp16(expr);
+        break;
+
+      case "CallExpr":
+        // Function call - look up signature
+        const callSig = this.functionSignatures.get(expr.name);
+        const funcReturnType = callSig?.returnType;
+        const returns16Bit = funcReturnType === "i16" ||
+                             funcReturnType === "u16" ||
+                             funcReturnType === "ptr";
+
+        // Store arguments to parameter variables
+        if (callSig && callSig.params.length > 0) {
+          for (let i = 0; i < expr.args.length && i < callSig.params.length; i++) {
+            const param = callSig.params[i];
+            const paramIs16Bit = param.varType === "i16" ||
+                                 param.varType === "u16" ||
+                                 param.varType === "ptr";
+            if (paramIs16Bit) {
+              this.generateExpr16(expr.args[i]);
+              this.emit(`  sta ${this.varLabel(param.name)}`);
+              this.emit(`  stx ${this.varLabel(param.name)}+1`);
+            } else {
+              this.generateExpr8(expr.args[i]);
+              this.emit(`  sta ${this.varLabel(param.name)}`);
+            }
+          }
+        }
+
+        this.emit(`  jsr ${expr.name}`);
+        // If function returns 8-bit, zero-extend to 16-bit
+        if (!returns16Bit) {
+          this.emit(`  ldx #0`);
+        }
+        // Result in A (low) and X (high)
         break;
 
       default:
