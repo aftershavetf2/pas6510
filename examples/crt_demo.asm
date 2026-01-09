@@ -286,9 +286,9 @@ _endwhile_9:
 
 ; Procedure: gotoxy
 gotoxy:
-  lda _var_param_x
+  lda _var_x
   sta _var_cursor_x
-  lda _var_param_y
+  lda _var_y
   sta _var_cursor_y
   rts
 
@@ -326,7 +326,7 @@ putch:
   ldx _var_screen_addr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_param_ch
+  lda _var_ch
   ldy #0
   sta (_poke_addr),y
   lda _var_color_addr
@@ -359,7 +359,9 @@ _else_17:
 
 ; Procedure: putc
 putc:
-  lda _var_param_ch
+  lda _var_ch
+  sta _var_sc
+  lda _var_sc
   pha
   lda #65
   sta _tmp
@@ -368,7 +370,7 @@ putc:
   bcs _skip_22
   jmp _else_20
 _skip_22:
-  lda _var_param_ch
+  lda _var_sc
   pha
   lda #90
   sta _tmp
@@ -378,19 +380,19 @@ _skip_22:
   bcc _le_cont_26
   jmp _else_23
 _le_cont_26:
-  lda _var_param_ch
+  lda _var_sc
   pha
   lda #64
   sta _tmp
   pla
   sec
   sbc _tmp
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   rts
 _else_23:
 _else_20:
-  lda _var_param_ch
+  lda _var_sc
   pha
   lda #97
   sta _tmp
@@ -399,7 +401,7 @@ _else_20:
   bcs _skip_29
   jmp _else_27
 _skip_29:
-  lda _var_param_ch
+  lda _var_sc
   pha
   lda #122
   sta _tmp
@@ -409,24 +411,26 @@ _skip_29:
   bcc _le_cont_33
   jmp _else_30
 _le_cont_33:
-  lda _var_param_ch
+  lda _var_sc
   pha
   lda #96
   sta _tmp
   pla
   sec
   sbc _tmp
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   rts
 _else_30:
 _else_27:
+  lda _var_sc
+  sta _var_ch
   jsr putch
   rts
 
 ; Procedure: setcolor
 setcolor:
-  lda _var_param_color
+  lda _var_c
   sta _var_text_color
   rts
 
@@ -437,13 +441,15 @@ hline:
 _while_34:
   lda _var_i
   pha
-  lda _var_param_len
+  lda _var_len
   sta _tmp
   pla
   cmp _tmp
   bcc _skip_36
   jmp _endwhile_35
 _skip_36:
+  lda _var_ch
+  sta _var_ch
   jsr putch
   lda _var_i
   pha
@@ -459,16 +465,16 @@ _endwhile_35:
 
 ; Procedure: fillrect
 fillrect:
-  lda _var_param_x
+  lda _var_x
   sta _var_start_x
-  lda _var_param_y
+  lda _var_y
   sta _var_start_y
   lda #0
   sta _var_row
 _while_37:
   lda _var_row
   pha
-  lda _var_param_h
+  lda _var_h
   sta _tmp
   pla
   cmp _tmp
@@ -490,7 +496,7 @@ _skip_39:
 _while_40:
   lda _var_col
   pha
-  lda _var_param_w
+  lda _var_w
   sta _tmp
   pla
   cmp _tmp
@@ -503,7 +509,7 @@ _skip_42:
   ldx _var_screen_addr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_param_ch
+  lda _var_ch
   ldy #0
   sta (_poke_addr),y
   lda _var_color_addr
@@ -545,27 +551,19 @@ _endwhile_38:
 
 ; Procedure: box
 box:
-  lda _var_param_x
-  sta _var_bx
-  lda _var_param_y
-  sta _var_by
-  lda _var_param_w
-  sta _var_bw
-  lda _var_param_h
-  sta _var_bh
-  lda _var_bx
+  lda _var_x
   sta _var_cursor_x
-  lda _var_by
+  lda _var_y
   sta _var_cursor_y
   lda #112
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   lda #2
   sta _var_i
 _while_43:
   lda _var_i
   pha
-  lda _var_bw
+  lda _var_w
   sta _tmp
   pla
   cmp _tmp
@@ -573,7 +571,7 @@ _while_43:
   jmp _endwhile_44
 _skip_45:
   lda #64
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   lda _var_i
   pha
@@ -586,14 +584,14 @@ _skip_45:
   jmp _while_43
 _endwhile_44:
   lda #110
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   lda #1
   sta _var_i
 _while_46:
   lda _var_i
   pha
-  lda _var_bh
+  lda _var_h
   pha
   lda #1
   sta _tmp
@@ -606,9 +604,9 @@ _while_46:
   bcc _skip_48
   jmp _endwhile_47
 _skip_48:
-  lda _var_bx
+  lda _var_x
   sta _var_cursor_x
-  lda _var_by
+  lda _var_y
   pha
   lda _var_i
   sta _tmp
@@ -617,11 +615,11 @@ _skip_48:
   adc _tmp
   sta _var_cursor_y
   lda #93
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
-  lda _var_bx
+  lda _var_x
   pha
-  lda _var_bw
+  lda _var_w
   sta _tmp
   pla
   clc
@@ -633,6 +631,8 @@ _skip_48:
   sec
   sbc _tmp
   sta _var_cursor_x
+  lda #93
+  sta _var_ch
   jsr putch
   lda _var_i
   pha
@@ -644,11 +644,11 @@ _skip_48:
   sta _var_i
   jmp _while_46
 _endwhile_47:
-  lda _var_bx
+  lda _var_x
   sta _var_cursor_x
-  lda _var_by
+  lda _var_y
   pha
-  lda _var_bh
+  lda _var_h
   sta _tmp
   pla
   clc
@@ -661,14 +661,14 @@ _endwhile_47:
   sbc _tmp
   sta _var_cursor_y
   lda #109
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   lda #2
   sta _var_i
 _while_49:
   lda _var_i
   pha
-  lda _var_bw
+  lda _var_w
   sta _tmp
   pla
   cmp _tmp
@@ -676,7 +676,7 @@ _while_49:
   jmp _endwhile_50
 _skip_51:
   lda #64
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   lda _var_i
   pha
@@ -689,13 +689,13 @@ _skip_51:
   jmp _while_49
 _endwhile_50:
   lda #125
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   rts
 
 ; Procedure: putnum
 putnum:
-  lda _var_param_num
+  lda _var_num
   pha
   lda #0
   sta _tmp
@@ -705,14 +705,14 @@ putnum:
   jmp _else_52
 _skip_54:
   lda #48
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   rts
 _else_52:
   lda #0
   sta _var_count
-  lda _var_param_num
-  ldx _var_param_num+1
+  lda _var_num
+  ldx _var_num+1
   sta _var_temp
   stx _var_temp+1
 _while_55:
@@ -806,7 +806,7 @@ _gt_cont_62:
   lda _var_count
   tay
   lda _var_digits,y
-  sta _var_param_ch
+  sta _var_ch
   jsr putch
   jmp _while_59
 _endwhile_60:
@@ -816,171 +816,171 @@ _endwhile_60:
 ; Procedure: print_hello
 print_hello:
   lda #72
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #76
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #76
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #79
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #87
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #79
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #82
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #76
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #68
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
 ; Procedure: print_pas6510
 print_pas6510:
   lda #80
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #65
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #83
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #54
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #53
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #49
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #48
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #67
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #82
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #84
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #68
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #77
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #79
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
 ; Procedure: print_number_label
 print_number_label:
   lda #78
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #85
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #77
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #66
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #82
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #58
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
 ; Procedure: print_red
 print_red:
   lda #82
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #68
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
 ; Procedure: print_green
 print_green:
   lda #71
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #82
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #78
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #32
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
 ; Procedure: print_blue
 print_blue:
   lda #66
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #76
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #85
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   lda #69
-  sta _var_param_ch
+  sta _var_ch
   jsr putc
   rts
 
@@ -989,74 +989,74 @@ main:
   jsr crt_init
   jsr clear
   lda #3
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   lda #5
-  sta _var_param_x
+  sta _var_x
   lda #2
-  sta _var_param_y
+  sta _var_y
   lda #30
-  sta _var_param_w
+  sta _var_w
   lda #10
-  sta _var_param_h
+  sta _var_h
   jsr box
   lda #1
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   lda #14
-  sta _var_param_x
+  sta _var_x
   lda #4
-  sta _var_param_y
+  sta _var_y
   jsr gotoxy
   jsr print_hello
   lda #7
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   lda #8
-  sta _var_param_x
+  sta _var_x
   lda #6
-  sta _var_param_y
+  sta _var_y
   jsr gotoxy
   jsr print_number_label
   lda #57
   ldx #48
-  sta _var_param_num
-  stx _var_param_num+1
+  sta _var_num
+  stx _var_num+1
   jsr putnum
   lda #8
-  sta _var_param_x
+  sta _var_x
   lda #8
-  sta _var_param_y
+  sta _var_y
   jsr gotoxy
   lda #2
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   jsr print_red
   lda #5
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   jsr print_green
   lda #6
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   jsr print_blue
   lda #14
-  sta _var_param_color
+  sta _var_c
   jsr setcolor
   lda #0
-  sta _var_param_x
+  sta _var_x
   lda #20
-  sta _var_param_y
+  sta _var_y
   jsr gotoxy
   lda #64
-  sta _var_param_ch
+  sta _var_ch
   lda #40
-  sta _var_param_len
+  sta _var_len
   jsr hline
   lda #12
-  sta _var_param_x
+  sta _var_x
   lda #22
-  sta _var_param_y
+  sta _var_y
   jsr gotoxy
   jsr print_pas6510
   rts
@@ -1172,22 +1172,6 @@ _var_cursor_y:
   .byte 0
 _var_text_color:
   .byte 0
-_var_param_x:
-  .byte 0
-_var_param_y:
-  .byte 0
-_var_param_w:
-  .byte 0
-_var_param_h:
-  .byte 0
-_var_param_ch:
-  .byte 0
-_var_param_len:
-  .byte 0
-_var_param_color:
-  .byte 0
-_var_param_num:
-  .byte 0, 0
 _var_screen_addr:
   .byte 0, 0
 _var_color_addr:
@@ -1204,22 +1188,30 @@ _var_addr:
   .byte 0, 0
 _var_caddr:
   .byte 0, 0
+_var_x:
+  .byte 0
+_var_y:
+  .byte 0
+_var_ch:
+  .byte 0
 _var_sc:
   .byte 0
+_var_c:
+  .byte 0
+_var_len:
+  .byte 0
 _var_i:
+  .byte 0
+_var_w:
+  .byte 0
+_var_h:
   .byte 0
 _var_start_x:
   .byte 0
 _var_start_y:
   .byte 0
-_var_bx:
-  .byte 0
-_var_by:
-  .byte 0
-_var_bw:
-  .byte 0
-_var_bh:
-  .byte 0
+_var_num:
+  .byte 0, 0
 _var_digits:
   .byte 0, 0, 0, 0, 0, 0
 _var_count:

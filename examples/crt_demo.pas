@@ -1,5 +1,4 @@
 import crt_init, clear, gotoxy, putch, putc, putnum, setcolor, newline, box, hline from "../lib/crt.pas";
-import param_x, param_y, param_w, param_h, param_ch, param_len, param_color, param_num from "../lib/crt.pas";
 import cursor_x, cursor_y, text_color from "../lib/crt.pas";
 
 program crt_demo
@@ -8,124 +7,75 @@ program crt_demo
 
 proc print_hello()
     { Print "HELLO WORLD" }
-    param_ch := 72;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 76;
-    putc();
-    param_ch := 76;
-    putc();
-    param_ch := 79;
-    putc();
-    param_ch := 32;
-    putc();
-    param_ch := 87;
-    putc();
-    param_ch := 79;
-    putc();
-    param_ch := 82;
-    putc();
-    param_ch := 76;
-    putc();
-    param_ch := 68;
-    putc();
+    putc(72);
+    putc(69);
+    putc(76);
+    putc(76);
+    putc(79);
+    putc(32);
+    putc(87);
+    putc(79);
+    putc(82);
+    putc(76);
+    putc(68);
 end;
 
 proc print_pas6510()
     { Print "PAS6510 CRT DEMO" }
-    param_ch := 80;
-    putc();
-    param_ch := 65;
-    putc();
-    param_ch := 83;
-    putc();
-    param_ch := 54;
-    putc();
-    param_ch := 53;
-    putc();
-    param_ch := 49;
-    putc();
-    param_ch := 48;
-    putc();
-    param_ch := 32;
-    putc();
-    param_ch := 67;
-    putc();
-    param_ch := 82;
-    putc();
-    param_ch := 84;
-    putc();
-    param_ch := 32;
-    putc();
-    param_ch := 68;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 77;
-    putc();
-    param_ch := 79;
-    putc();
+    putc(80);
+    putc(65);
+    putc(83);
+    putc(54);
+    putc(53);
+    putc(49);
+    putc(48);
+    putc(32);
+    putc(67);
+    putc(82);
+    putc(84);
+    putc(32);
+    putc(68);
+    putc(69);
+    putc(77);
+    putc(79);
 end;
 
 proc print_number_label()
     { Print "NUMBER: " }
-    param_ch := 78;
-    putc();
-    param_ch := 85;
-    putc();
-    param_ch := 77;
-    putc();
-    param_ch := 66;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 82;
-    putc();
-    param_ch := 58;
-    putc();
-    param_ch := 32;
-    putc();
+    putc(78);
+    putc(85);
+    putc(77);
+    putc(66);
+    putc(69);
+    putc(82);
+    putc(58);
+    putc(32);
 end;
 
 proc print_red()
     { Print "RED " }
-    param_ch := 82;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 68;
-    putc();
-    param_ch := 32;
-    putc();
+    putc(82);
+    putc(69);
+    putc(68);
+    putc(32);
 end;
 
 proc print_green()
     { Print "GREEN " }
-    param_ch := 71;
-    putc();
-    param_ch := 82;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 69;
-    putc();
-    param_ch := 78;
-    putc();
-    param_ch := 32;
-    putc();
+    putc(71);
+    putc(82);
+    putc(69);
+    putc(69);
+    putc(78);
+    putc(32);
 end;
 
 proc print_blue()
     { Print "BLUE" }
-    param_ch := 66;
-    putc();
-    param_ch := 76;
-    putc();
-    param_ch := 85;
-    putc();
-    param_ch := 69;
-    putc();
+    putc(66);
+    putc(76);
+    putc(85);
+    putc(69);
 end;
 
 proc main()
@@ -133,59 +83,35 @@ proc main()
     clear();
 
     { Draw a box }
-    param_color := 3;
-    setcolor();
-    param_x := 5;
-    param_y := 2;
-    param_w := 30;
-    param_h := 10;
-    box();
+    setcolor(3);
+    box(5, 2, 30, 10);
 
     { Title inside box }
-    param_color := 1;
-    setcolor();
-    param_x := 14;
-    param_y := 4;
-    gotoxy();
+    setcolor(1);
+    gotoxy(14, 4);
     print_hello();
 
     { Show a number }
-    param_color := 7;
-    setcolor();
-    param_x := 8;
-    param_y := 6;
-    gotoxy();
+    setcolor(7);
+    gotoxy(8, 6);
     print_number_label();
-    param_num := 12345;
-    putnum();
+    putnum(12345);
 
     { Color demo }
-    param_x := 8;
-    param_y := 8;
-    gotoxy();
-    param_color := 2;
-    setcolor();
+    gotoxy(8, 8);
+    setcolor(2);
     print_red();
-    param_color := 5;
-    setcolor();
+    setcolor(5);
     print_green();
-    param_color := 6;
-    setcolor();
+    setcolor(6);
     print_blue();
 
     { Footer line }
-    param_color := 14;
-    setcolor();
-    param_x := 0;
-    param_y := 20;
-    gotoxy();
-    param_ch := 64;
-    param_len := 40;
-    hline();
+    setcolor(14);
+    gotoxy(0, 20);
+    hline(64, 40);
 
     { Footer text }
-    param_x := 12;
-    param_y := 22;
-    gotoxy();
+    gotoxy(12, 22);
     print_pas6510();
 end;
