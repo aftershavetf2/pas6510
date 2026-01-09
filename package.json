@@ -1,0 +1,35 @@
+{
+  "name": "pas6510",
+  "version": "1.0.0",
+  "description": "This is a optimizing Pascal-ish compiler for the 6510 CPU. \r It is meant to run on a PC and compiles to 6510 assembly source code which then can be assembled using",
+  "main": "dist/index.js",
+  "bin": {
+    "pas6510": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "tsx watch src/cli.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aftershavetf2/pas6510.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aftershavetf2/pas6510/issues"
+  },
+  "homepage": "https://github.com/aftershavetf2/pas6510#readme",
+  "devDependencies": {
+    "@types/node": "25.0.3",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@neshacker/6502-tools": "0.1.0"
+  }
+}
