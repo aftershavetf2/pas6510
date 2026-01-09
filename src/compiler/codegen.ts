@@ -47,6 +47,7 @@ export class CodeGenerator {
       this.emit("");
       this.emit("; Program start");
       this.emit("start:");
+      this.emit("  jsr $ffcc    ; CLRCHN - reset I/O channels");
       this.emit("  jsr main");
       this.emit("  rts");
       this.emit("");
@@ -682,9 +683,8 @@ export class CodeGenerator {
     this.emit("_div16_10:");
     this.emit("  lda #0");
     this.emit("  ldx #16");
-    this.emit("  clc");
     this.emit("_d10_loop:");
-    this.emit("  rol _print_val");
+    this.emit("  asl _print_val");
     this.emit("  rol _print_val+1");
     this.emit("  rol a");
     this.emit("  cmp #10");
