@@ -55,8 +55,8 @@ export class CodeGenerator {
       // Default: C64 BASIC start with auto-run stub
       this.emit("  .org $0801");
       this.emit("");
-      this.emit("; BASIC stub: 10 SYS 2062");
-      this.emit("  .byte $0b, $08, $0a, $00, $9e, $32, $30, $36, $32, $00, $00, $00");
+      this.emit("; BASIC stub: 10 SYS 2061");
+      this.emit("  .byte $0b, $08, $0a, $00, $9e, $32, $30, $36, $31, $00, $00, $00");
       this.emit("");
       this.emit("; Program start");
       this.emit("start:");
