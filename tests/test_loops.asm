@@ -161,7 +161,9 @@ assert_eq:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_0
+  beq _skip_2
+  jmp _else_0
+_skip_2:
   lda _var_pass_count
   ldx _var_pass_count+1
   sta _tmp16
@@ -294,7 +296,7 @@ main:
   stx _var_sum+1
   lda #1
   sta _var_i
-_for_2:
+_for_3:
   lda _var_sum
   ldx _var_sum+1
   sta _tmp16
@@ -313,7 +315,9 @@ _for_2:
   inc _var_i
   lda _var_i
   cmp #11
-  bne _for_2
+  beq _endfor_4
+  jmp _for_3
+_endfor_4:
   lda #55
   ldx #0
   sta _var_expected_val
@@ -329,7 +333,7 @@ _for_2:
   stx _var_count+1
   lda #0
   sta _var_i
-_for_4:
+_for_5:
   lda _var_count
   ldx _var_count+1
   sta _tmp16
@@ -348,7 +352,9 @@ _for_4:
   inc _var_i
   lda _var_i
   cmp #5
-  bne _for_4
+  beq _endfor_6
+  jmp _for_5
+_endfor_6:
   lda #5
   ldx #0
   sta _var_expected_val
@@ -364,16 +370,17 @@ _for_4:
   stx _var_sum+1
   lda #1
   sta _var_i
-_while_6:
+_while_7:
   lda _var_i
   pha
   lda #5
   sta _tmp
   pla
   cmp _tmp
-  beq _le_ok_8
-  bcs _endwhile_7
-_le_ok_8:
+  beq _le_skip_9
+  bcc _le_skip_9
+  jmp _endwhile_8
+_le_skip_9:
   lda _var_sum
   ldx _var_sum+1
   sta _tmp16
@@ -397,8 +404,8 @@ _le_ok_8:
   clc
   adc _tmp
   sta _var_i
-  jmp _while_6
-_endwhile_7:
+  jmp _while_7
+_endwhile_8:
   lda #15
   ldx #0
   sta _var_expected_val
@@ -418,13 +425,15 @@ _endwhile_7:
   sta _tmp
   pla
   cmp _tmp
-  beq _else_9
-  bcc _else_9
+  beq _gt_skip_12
+  bcs _gt_skip_12
+  jmp _else_10
+_gt_skip_12:
   lda #100
   ldx #0
   sta _var_sum
   stx _var_sum+1
-_else_9:
+_else_10:
   lda #100
   ldx #0
   sta _var_expected_val
@@ -440,18 +449,20 @@ _else_9:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_11
+  beq _skip_15
+  jmp _else_13
+_skip_15:
   lda #200
   ldx #0
   sta _var_sum
   stx _var_sum+1
-  jmp _endif_12
-_else_11:
+  jmp _endif_14
+_else_13:
   lda #44
   ldx #1
   sta _var_sum
   stx _var_sum+1
-_endif_12:
+_endif_14:
   lda #200
   ldx #0
   sta _var_expected_val
@@ -467,18 +478,20 @@ _endif_12:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_13
+  beq _skip_18
+  jmp _else_16
+_skip_18:
   lda #144
   ldx #1
   sta _var_sum
   stx _var_sum+1
-  jmp _endif_14
-_else_13:
+  jmp _endif_17
+_else_16:
   lda #244
   ldx #1
   sta _var_sum
   stx _var_sum+1
-_endif_14:
+_endif_17:
   lda #244
   ldx #1
   sta _var_expected_val
@@ -498,12 +511,14 @@ _endif_14:
   sta _tmp
   pla
   cmp _tmp
-  bcs _else_15
+  bcc _skip_21
+  jmp _else_19
+_skip_21:
   lda #1
   ldx #0
   sta _var_sum
   stx _var_sum+1
-_else_15:
+_else_19:
   lda #1
   ldx #0
   sta _var_expected_val
@@ -523,13 +538,15 @@ _else_15:
   sta _tmp
   pla
   cmp _tmp
-  beq _else_17
-  bcc _else_17
+  beq _gt_skip_24
+  bcs _gt_skip_24
+  jmp _else_22
+_gt_skip_24:
   lda #1
   ldx #0
   sta _var_sum
   stx _var_sum+1
-_else_17:
+_else_22:
   lda #1
   ldx #0
   sta _var_expected_val
@@ -549,12 +566,14 @@ _else_17:
   sta _tmp
   pla
   cmp _tmp
-  beq _else_19
+  bne _skip_27
+  jmp _else_25
+_skip_27:
   lda #1
   ldx #0
   sta _var_sum
   stx _var_sum+1
-_else_19:
+_else_25:
   lda #1
   ldx #0
   sta _var_expected_val
@@ -570,19 +589,21 @@ _else_19:
   stx _var_sum+1
   lda #1
   sta _var_i
-_for_21:
+_for_28:
   lda #0
   ldx #0
   sta _var_count
   stx _var_count+1
-_while_23:
+_while_30:
   lda _var_count
   pha
   lda #2
   sta _tmp
   pla
   cmp _tmp
-  bcs _endwhile_24
+  bcc _skip_32
+  jmp _endwhile_31
+_skip_32:
   lda _var_sum
   ldx _var_sum+1
   sta _tmp16
@@ -613,12 +634,14 @@ _while_23:
   pla
   sta _var_count
   stx _var_count+1
-  jmp _while_23
-_endwhile_24:
+  jmp _while_30
+_endwhile_31:
   inc _var_i
   lda _var_i
   cmp #4
-  bne _for_21
+  beq _endfor_29
+  jmp _for_28
+_endfor_29:
   lda #6
   ldx #0
   sta _var_expected_val
@@ -636,6 +659,8 @@ _endwhile_24:
 
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
+
+_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0

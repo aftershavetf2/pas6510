@@ -388,7 +388,7 @@ export class CodeGenerator {
     this.generateExpr8(stmt.start);
     this.emit(`  sta ${this.varLabel(stmt.variable)}`);
 
-    // Store end value in temp
+    // Loop start
     this.emit(`${loopLabel}:`);
 
     // Generate body
@@ -400,21 +400,22 @@ export class CodeGenerator {
     this.emit(`  inc ${this.varLabel(stmt.variable)}`);
     this.emit(`  lda ${this.varLabel(stmt.variable)}`);
 
-    // Compare with end value
+    // Compare with end value (use jmp for long loops)
     if (stmt.end.kind === "NumberLiteral") {
       this.emit(`  cmp #${stmt.end.value + 1}`);
+      this.emit(`  beq ${endLabel}`);
+      this.emit(`  jmp ${loopLabel}`);
+      this.emit(`${endLabel}:`);
     } else {
       // Need to evaluate end expression and compare
-      // For now, store end in temp location
       this.generateExpr8(stmt.end);
       this.emit(`  clc`);
       this.emit(`  adc #1`);
       this.emit(`  cmp ${this.varLabel(stmt.variable)}`);
-      this.emit(`  bcs ${loopLabel}`);
-      return;
+      this.emit(`  bcc ${endLabel}`);
+      this.emit(`  jmp ${loopLabel}`);
+      this.emit(`${endLabel}:`);
     }
-
-    this.emit(`  bne ${loopLabel}`);
   }
 
   private generateWhileLoop(stmt: {
@@ -470,6 +471,15 @@ export class CodeGenerator {
     }
   }
 
+  // Helper to emit a "long branch" that works for any distance
+  // Uses inverted short branch over a jmp
+  private emitLongBranch(branchIfTrue: string, falseLabel: string): void {
+    const skipLabel = this.newLabel("skip");
+    this.emit(`  ${branchIfTrue} ${skipLabel}`);
+    this.emit(`  jmp ${falseLabel}`);
+    this.emit(`${skipLabel}:`);
+  }
+
   private generateCondition(expr: ExpressionNode, falseLabel: string): void {
     if (expr.kind === "BinaryOp") {
       const op = expr.operator;
@@ -486,36 +496,50 @@ export class CodeGenerator {
       this.emit(`  pla`);
       this.emit(`  cmp _tmp`);
 
+      // Use long branches to avoid range errors
       switch (op) {
         case "=":
-          this.emit(`  bne ${falseLabel}`);
+          // Jump to false if not equal; skip if equal
+          this.emitLongBranch("beq", falseLabel);
           break;
         case "<>":
-          this.emit(`  beq ${falseLabel}`);
+          // Jump to false if equal; skip if not equal
+          this.emitLongBranch("bne", falseLabel);
           break;
         case "<":
-          this.emit(`  bcs ${falseLabel}`); // Branch if >=
+          // Jump to false if >= (carry set); skip if < (carry clear)
+          this.emitLongBranch("bcc", falseLabel);
           break;
         case ">=":
-          this.emit(`  bcc ${falseLabel}`); // Branch if <
+          // Jump to false if < (carry clear); skip if >= (carry set)
+          this.emitLongBranch("bcs", falseLabel);
           break;
         case ">":
-          this.emit(`  beq ${falseLabel}`); // Equal means not greater
-          this.emit(`  bcc ${falseLabel}`); // Less means not greater
+          // A > B is TRUE only if: (not equal) AND (A >= B, carry set)
+          // Go to falseLabel if: equal OR (A < B, carry clear)
+          const gtFalse = this.newLabel("gt_false");
+          const gtCont = this.newLabel("gt_cont");
+          this.emit(`  beq ${gtFalse}`);   // If equal, A > B is false
+          this.emit(`  bcs ${gtCont}`);    // If A >= B (and not equal), A > B is true
+          this.emit(`${gtFalse}:`);        // equal or A < B: condition is false
+          this.emit(`  jmp ${falseLabel}`);
+          this.emit(`${gtCont}:`);
           break;
         case "<=":
-          // A <= B means A < B or A == B
-          // bcs jumps if A >= B, so we need to check
-          const okLabel = this.newLabel("le_ok");
-          this.emit(`  beq ${okLabel}`);
-          this.emit(`  bcs ${falseLabel}`);
-          this.emit(`${okLabel}:`);
+          // A <= B is TRUE if: equal OR (A < B, carry clear)
+          // Go to falseLabel if: (not equal) AND (A >= B, carry set), i.e., A > B
+          const leFalse = this.newLabel("le_false");
+          const leCont = this.newLabel("le_cont");
+          this.emit(`  beq ${leCont}`);    // If equal, A <= B is true, continue
+          this.emit(`  bcc ${leCont}`);    // If A < B, A <= B is true, continue
+          this.emit(`  jmp ${falseLabel}`);// A > B, condition is false
+          this.emit(`${leCont}:`);
           break;
       }
     } else {
       // Simple boolean - zero is false
       this.generateExpr8(expr);
-      this.emit(`  beq ${falseLabel}`);
+      this.emitLongBranch("bne", falseLabel);
     }
   }
 
@@ -528,6 +552,18 @@ export class CodeGenerator {
       // Print single character - pass in A
       this.generateExpr8(stmt.args[0]);
       this.emit(`  jsr $ffd2  ; CHROUT`);
+      return;
+    } else if (stmt.args.length === 2 && stmt.name === "poke") {
+      // poke(addr, value) - write value to memory address
+      // First, evaluate address (16-bit) and store it
+      this.generateExpr16(stmt.args[0]);
+      this.emit(`  sta _poke_addr`);
+      this.emit(`  stx _poke_addr+1`);
+      // Then evaluate value (8-bit)
+      this.generateExpr8(stmt.args[1]);
+      // Store to address using indirect addressing
+      this.emit(`  ldy #0`);
+      this.emit(`  sta (_poke_addr),y`);
       return;
     } else if (stmt.args.length === 1) {
       // Default: pass first argument in A
@@ -580,7 +616,21 @@ export class CodeGenerator {
         break;
 
       case "CallExpr":
-        this.emit(`  jsr ${expr.name}`);
+        // Handle built-in peek function
+        if (expr.name === "peek" && expr.args.length === 1) {
+          // peek(addr) - read byte from memory address
+          this.generateExpr16(expr.args[0]);
+          this.emit(`  sta _poke_addr`);
+          this.emit(`  stx _poke_addr+1`);
+          this.emit(`  ldy #0`);
+          this.emit(`  lda (_poke_addr),y`);
+        } else {
+          // Regular function call
+          if (expr.args.length === 1) {
+            this.generateExpr8(expr.args[0]);
+          }
+          this.emit(`  jsr ${expr.name}`);
+        }
         // Result expected in A
         break;
     }
@@ -727,6 +777,10 @@ export class CodeGenerator {
     // Temporary storage
     this.emit("_tmp: .byte 0, 0");
     this.emit("_tmp16: .byte 0, 0");
+    this.emit("");
+
+    // Zero page pointer for poke/peek (must be in ZP for indirect addressing)
+    this.emit("_poke_addr = $fb  ; ZP location for indirect addressing");
     this.emit("");
 
     // 8-bit multiply (result in A)

@@ -161,7 +161,9 @@ assert_eq:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_0
+  beq _skip_2
+  jmp _else_0
+_skip_2:
   lda _var_pass_count
   ldx _var_pass_count+1
   sta _tmp16
@@ -335,7 +337,7 @@ main:
   jsr assert_eq
   lda #0
   sta _var_i
-_for_2:
+_for_3:
   lda _var_i
   tay
   lda _var_i
@@ -351,7 +353,9 @@ _for_2:
   inc _var_i
   lda _var_i
   cmp #10
-  bne _for_2
+  beq _endfor_4
+  jmp _for_3
+_endfor_4:
   lda #6
   ldx #0
   sta _var_expected_val
@@ -380,7 +384,7 @@ _for_2:
   stx _var_sum+1
   lda #0
   sta _var_i
-_for_4:
+_for_5:
   lda _var_sum
   ldx _var_sum+1
   sta _tmp16
@@ -401,7 +405,9 @@ _for_4:
   inc _var_i
   lda _var_i
   cmp #10
-  bne _for_4
+  beq _endfor_6
+  jmp _for_5
+_endfor_6:
   lda #90
   ldx #0
   sta _var_expected_val
@@ -502,6 +508,8 @@ _for_4:
 
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
+
+_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0

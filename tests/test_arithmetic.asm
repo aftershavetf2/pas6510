@@ -161,7 +161,9 @@ assert_eq:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_0
+  beq _skip_2
+  jmp _else_0
+_skip_2:
   lda _var_pass_count
   ldx _var_pass_count+1
   sta _tmp16
@@ -525,6 +527,8 @@ main:
 
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
+
+_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0

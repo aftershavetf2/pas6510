@@ -161,7 +161,9 @@ assert_eq:
   sta _tmp
   pla
   cmp _tmp
-  bne _else_0
+  beq _skip_2
+  jmp _else_0
+_skip_2:
   lda _var_pass_count
   ldx _var_pass_count+1
   sta _tmp16
@@ -347,7 +349,7 @@ calc_sum_10:
   stx _var_shared_value+1
   lda #1
   sta _var_i
-_for_2:
+_for_3:
   lda _var_shared_value
   ldx _var_shared_value+1
   sta _tmp16
@@ -366,7 +368,9 @@ _for_2:
   inc _var_i
   lda _var_i
   cmp #11
-  bne _for_2
+  beq _endfor_4
+  jmp _for_3
+_endfor_4:
   rts
 
 ; Main module: test_modules
@@ -521,6 +525,8 @@ main:
 
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
+
+_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0

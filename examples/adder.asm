@@ -39,7 +39,9 @@ _for_0:
   inc _var_i
   lda _var_i
   cmp #11
-  bne _for_0
+  beq _endfor_1
+  jmp _for_0
+_endfor_1:
   lda _var_sum
   ldx _var_sum+1
   jsr write_u16_ln
@@ -48,8 +50,10 @@ _for_0:
 
 ; Runtime library
 
-_tmp: .byte 0
+_tmp: .byte 0, 0
 _tmp16: .byte 0, 0
+
+_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0

@@ -1,4 +1,4 @@
-; pas6510 compiled program: adder2
+; pas6510 compiled program: crt_test
 ;
 
   .org $0801
@@ -11,40 +11,64 @@ start:
   jsr main
   rts
 
-; Main module: adder2
+; Main module: crt_test
 ; Procedure: main
 main:
   lda #0
-  ldx #0
-  sta _var_sum
-  stx _var_sum+1
+  ldx #4
+  sta _var_addr
+  stx _var_addr+1
+  lda _var_addr
+  ldx _var_addr+1
+  sta _poke_addr
+  stx _poke_addr+1
+  lda #1
+  ldy #0
+  sta (_poke_addr),y
+  lda #1
+  ldx #4
+  sta _var_addr
+  stx _var_addr+1
+  lda _var_addr
+  ldx _var_addr+1
+  sta _poke_addr
+  stx _poke_addr+1
+  lda #2
+  ldy #0
+  sta (_poke_addr),y
+  lda #2
+  ldx #4
+  sta _var_addr
+  stx _var_addr+1
+  lda _var_addr
+  ldx _var_addr+1
+  sta _poke_addr
+  stx _poke_addr+1
+  lda #3
+  ldy #0
+  sta (_poke_addr),y
+  lda #40
+  ldx #4
+  sta _var_addr
+  stx _var_addr+1
+  lda _var_addr
+  ldx _var_addr+1
+  sta _poke_addr
+  stx _poke_addr+1
+  lda #4
+  ldy #0
+  sta (_poke_addr),y
   lda #0
-  sta _var_i
-_for_0:
-  lda _var_sum
-  ldx _var_sum+1
-  sta _tmp16
-  stx _tmp16+1
-  lda _var_i
-  ldx #0
-  clc
-  adc _tmp16
-  pha
-  txa
-  adc _tmp16+1
-  tax
-  pla
-  sta _var_sum
-  stx _var_sum+1
-  lda _var_sum
-  ldx _var_sum+1
-  jsr write_u16_ln
-  inc _var_i
-  lda _var_i
-  cmp #11
-  beq _endfor_1
-  jmp _for_0
-_endfor_1:
+  ldx #216
+  sta _var_addr
+  stx _var_addr+1
+  lda _var_addr
+  ldx _var_addr+1
+  sta _poke_addr
+  stx _poke_addr+1
+  lda #1
+  ldy #0
+  sta (_poke_addr),y
   rts
 
 
@@ -144,7 +168,5 @@ _d10_skip:
   rts
 
 ; Variables
-_var_sum:
+_var_addr:
   .byte 0, 0
-_var_i:
-  .byte 0
