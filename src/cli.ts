@@ -4,7 +4,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";
-import { compile } from "./compiler";
+import { compileFile } from "./compiler";
 
 function printUsage(): void {
   console.log("pas6510 - Pascal compiler for 6510 CPU");
@@ -80,12 +80,11 @@ function main(): void {
     : path.join(inputDir, baseName + ".prg");
   const cfgFile = path.join(inputDir, baseName + ".cfg");
 
-  // Read and compile
+  // Compile with module resolution
   console.log(`Compiling ${inputFile}...`);
 
   try {
-    const source = fs.readFileSync(inputPath, "utf-8");
-    const assembly = compile(source);
+    const assembly = compileFile(inputPath);
 
     fs.writeFileSync(asmFile, assembly);
     console.log(`  ${baseName}.asm`);

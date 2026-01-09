@@ -1,4 +1,4 @@
-; pas6510 compiled program: adder
+; pas6510 compiled program: main
 ;
 
   .org $0801
@@ -11,18 +11,24 @@ start:
   jsr main
   rts
 
-; Main module: adder
-; Procedure: main
-main:
+; Module: math_module
+; Procedure: set_ten
+set_ten:
+  lda #10
+  sta _var_CONST_TEN
+  rts
+
+; Procedure: calc_sum
+calc_sum:
   lda #0
   ldx #0
-  sta _var_sum
-  stx _var_sum+1
-  lda #0
+  sta _var_RESULT
+  stx _var_RESULT+1
+  lda #1
   sta _var_i
 _for_0:
-  lda _var_sum
-  ldx _var_sum+1
+  lda _var_RESULT
+  ldx _var_RESULT+1
   sta _tmp16
   stx _tmp16+1
   lda _var_i
@@ -34,14 +40,24 @@ _for_0:
   adc _tmp16+1
   tax
   pla
-  sta _var_sum
-  stx _var_sum+1
+  sta _var_RESULT
+  stx _var_RESULT+1
   inc _var_i
   lda _var_i
-  cmp #11
+  cmp #6
   bne _for_0
-  lda _var_sum
-  ldx _var_sum+1
+  rts
+
+; Main module: main
+; Procedure: main
+main:
+  jsr set_ten
+  lda _var_CONST_TEN
+  ldx #0
+  jsr write_u16_ln
+  jsr calc_sum
+  lda _var_RESULT
+  ldx _var_RESULT+1
   jsr write_u16_ln
   rts
 
@@ -140,7 +156,9 @@ _d10_skip:
   rts
 
 ; Variables
-_var_sum:
+_var_CONST_TEN:
+  .byte 0
+_var_RESULT:
   .byte 0, 0
 _var_i:
   .byte 0

@@ -7,11 +7,13 @@ import {
   StatementNode,
   ExpressionNode,
   VarDecl,
+  GlobalVarDecl,
   DataType,
   VarType,
   isArrayType,
   ArrayType,
 } from "./ast";
+import { ResolvedProgram, ResolvedModule } from "./resolver";
 
 interface Variable {
   name: string;
@@ -65,12 +67,117 @@ export class CodeGenerator {
       this.emit("");
     }
 
+    // Allocate global variables
+    for (const global of program.globals) {
+      this.allocateGlobalVariable(global);
+    }
+
     // Generate all procedures and functions
     for (const proc of program.procedures) {
       this.generateProcedure(proc);
     }
 
     for (const func of program.functions) {
+      this.generateFunction(func);
+    }
+
+    // Runtime library
+    this.generateRuntime();
+
+    // Variable storage
+    this.emit("");
+    this.emit("; Variables");
+    for (const [name, v] of this.variables) {
+      this.emit(`${this.varLabel(name)}:`);
+      this.emitBytes(v.size);
+    }
+
+    return this.output.join("\n");
+  }
+
+  generateFromResolved(resolved: ResolvedProgram): string {
+    this.output = [];
+    this.variables.clear();
+    this.nextZpAddress = 0x02;
+    this.nextRamAddress = 0x0800;
+    this.labelCounter = 0;
+
+    const mainProgram = resolved.mainModule.program;
+
+    // Header
+    this.emit(`; pas6510 compiled program: ${mainProgram.name}`);
+    this.emit(`;`);
+    this.emit("");
+
+    if (mainProgram.org !== undefined) {
+      // Custom origin - no BASIC stub
+      const orgHex = mainProgram.org.toString(16).toUpperCase().padStart(4, "0");
+      this.emit(`  .org $${orgHex}`);
+      this.emit("");
+      this.emit("; Program start");
+      this.emit("start:");
+      this.emit("  jsr $ffcc    ; CLRCHN - reset I/O channels");
+      this.emit("  jsr main");
+      this.emit("  rts");
+      this.emit("");
+    } else {
+      // Default: C64 BASIC start with auto-run stub
+      this.emit("  .org $0801");
+      this.emit("");
+      this.emit("; BASIC stub: 10 SYS 2061");
+      this.emit("  .byte $0b, $08, $0a, $00, $9e, $32, $30, $36, $31, $00, $00, $00");
+      this.emit("");
+      this.emit("; Program start");
+      this.emit("start:");
+      this.emit("  jsr main");
+      this.emit("  rts");
+      this.emit("");
+    }
+
+    // First, generate code for all dependencies (imported modules)
+    // Only include public procedures, functions, and variables
+    for (const dep of resolved.dependencies) {
+      if (dep.filePath === resolved.mainModule.filePath) continue;
+
+      this.emit(`; Module: ${dep.program.name}`);
+
+      // Allocate public global variables
+      for (const global of dep.program.globals) {
+        if (global.isPublic) {
+          this.allocateGlobalVariable(global);
+        }
+      }
+
+      // Generate public procedures
+      for (const proc of dep.program.procedures) {
+        if (proc.isPublic) {
+          this.generateProcedure(proc);
+        }
+      }
+
+      // Generate public functions
+      for (const func of dep.program.functions) {
+        if (func.isPublic) {
+          this.generateFunction(func);
+        }
+      }
+    }
+
+    // Now generate the main module
+    this.emit(`; Main module: ${mainProgram.name}`);
+
+    // Allocate global variables
+    for (const global of mainProgram.globals) {
+      this.allocateGlobalVariable(global);
+    }
+
+    // Generate all procedures (public and private)
+    for (const proc of mainProgram.procedures) {
+      this.generateProcedure(proc);
+    }
+
+    // Generate all functions (public and private)
+    for (const func of mainProgram.functions) {
       this.generateFunction(func);
     }
 
@@ -133,6 +240,21 @@ export class CodeGenerator {
   }
 
   private allocateVariable(decl: VarDecl): Variable {
+    const size = this.getTypeSize(decl.varType);
+    const address = this.nextRamAddress;
+    this.nextRamAddress += size;
+
+    const v: Variable = {
+      name: decl.name,
+      varType: decl.varType,
+      address,
+      size,
+    };
+    this.variables.set(decl.name, v);
+    return v;
+  }
+
+  private allocateGlobalVariable(decl: GlobalVarDecl): Variable {
     const size = this.getTypeSize(decl.varType);
     const address = this.nextRamAddress;
     this.nextRamAddress += size;

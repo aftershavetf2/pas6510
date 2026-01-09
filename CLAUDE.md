@@ -34,6 +34,7 @@ npm start        # Run CLI
   - `ast.ts` - AST node types
   - `parser.ts` - Parser (tokens → AST)
   - `codegen.ts` - Code generator (AST → 6510 assembly)
+  - `resolver.ts` - Module resolver (handles imports)
 - `examples/` - Example programs
 
 ## Language Features
@@ -45,6 +46,54 @@ The pas6510 language is Pascal-like with these differences:
 - No recursion (not re-entrant)
 - Main proc required
 - `{ORG 0x1000}` directive to set code origin
+
+## Module System
+
+Modules allow code reuse across files using `pub` and `import`.
+
+### Exporting with `pub`
+
+Use `pub` keyword before `proc`, `func`, or `var` to export:
+
+```pascal
+program math_module
+
+pub var RESULT: u16;
+
+pub proc calc_sum()
+    var i: u8;
+    RESULT := 0;
+    for i = 1 to 5 do
+        RESULT := RESULT + i;
+    end;
+end;
+
+proc main()
+end;
+```
+
+### Importing
+
+Import statements must appear before `program`:
+
+```pascal
+import calc_sum, RESULT from "math.pas";
+
+program main
+
+proc main()
+    calc_sum();
+    write_u16_ln(RESULT);
+end;
+```
+
+### Module Rules
+
+- Import paths are relative to the importing file
+- Transitive imports are supported (modules can import other modules)
+- Circular imports produce a compile error
+- Importing non-public symbols produces an error with helpful message
+- Only `pub` symbols are included in the compiled output from imported modules
 
 ## Compiler Pipeline
 

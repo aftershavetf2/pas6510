@@ -6,6 +6,8 @@ import {
   ProcedureNode,
   FunctionNode,
   VarDecl,
+  GlobalVarDecl,
+  ImportNode,
   StatementNode,
   ExpressionNode,
   DataType,
@@ -61,6 +63,12 @@ export class Parser {
   }
 
   private parseProgram(): ProgramNode {
+    // Parse imports first (before ORG and PROGRAM)
+    const imports: ImportNode[] = [];
+    while (this.match(TokenType.IMPORT)) {
+      imports.push(this.parseImportStatement());
+    }
+
     // Check for optional ORG directive before program
     let org: number | undefined;
     if (this.match(TokenType.DIRECTIVE_ORG)) {
@@ -71,14 +79,23 @@ export class Parser {
     this.expect(TokenType.PROGRAM);
     const nameToken = this.expect(TokenType.IDENTIFIER);
 
+    const globals: GlobalVarDecl[] = [];
     const procedures: ProcedureNode[] = [];
     const functions: FunctionNode[] = [];
 
     while (!this.match(TokenType.EOF)) {
+      // Check for 'pub' modifier
+      const isPublic = this.match(TokenType.PUB);
+      if (isPublic) {
+        this.advance();
+      }
+
       if (this.match(TokenType.PROC)) {
-        procedures.push(this.parseProcedure());
+        procedures.push(this.parseProcedure(isPublic));
       } else if (this.match(TokenType.FUNC)) {
-        functions.push(this.parseFunction());
+        functions.push(this.parseFunction(isPublic));
+      } else if (this.match(TokenType.VAR)) {
+        globals.push(this.parseGlobalVar(isPublic));
       } else {
         throw new Error(
           `Unexpected token ${this.peek().type} at line ${this.peek().line}`
@@ -90,9 +107,39 @@ export class Parser {
       kind: "Program",
       name: nameToken.value,
       org,
+      imports,
+      globals,
       procedures,
       functions,
     };
+  }
+
+  private parseImportStatement(): ImportNode {
+    this.expect(TokenType.IMPORT);
+    const names: string[] = [];
+
+    // Parse comma-separated list of identifiers
+    names.push(this.expect(TokenType.IDENTIFIER).value);
+    while (this.match(TokenType.COMMA)) {
+      this.advance();
+      names.push(this.expect(TokenType.IDENTIFIER).value);
+    }
+
+    this.expect(TokenType.FROM);
+    const modulePath = this.expect(TokenType.STRING).value;
+    this.expect(TokenType.SEMICOLON);
+
+    return { names, modulePath };
+  }
+
+  private parseGlobalVar(isPublic: boolean): GlobalVarDecl {
+    this.expect(TokenType.VAR);
+    const name = this.expect(TokenType.IDENTIFIER).value;
+    this.expect(TokenType.COLON);
+    const varType = this.parseType();
+    this.expect(TokenType.SEMICOLON);
+
+    return { name, varType, isPublic };
   }
 
   private parseAddress(value: string): number {
@@ -104,7 +151,7 @@ export class Parser {
     return parseInt(value, 10);
   }
 
-  private parseProcedure(): ProcedureNode {
+  private parseProcedure(isPublic: boolean = false): ProcedureNode {
     this.expect(TokenType.PROC);
     const nameToken = this.expect(TokenType.IDENTIFIER);
     const params = this.parseParams();
@@ -130,10 +177,11 @@ export class Parser {
       params,
       locals,
       body,
+      isPublic,
     };
   }
 
-  private parseFunction(): FunctionNode {
+  private parseFunction(isPublic: boolean = false): FunctionNode {
     this.expect(TokenType.FUNC);
     const nameToken = this.expect(TokenType.IDENTIFIER);
     const params = this.parseParams();
@@ -161,6 +209,7 @@ export class Parser {
       returnType,
       locals,
       body,
+      isPublic,
     };
   }
 

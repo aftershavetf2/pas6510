@@ -18,13 +18,28 @@ export interface ASTNode {
   kind: string;
 }
 
+// Import statement
+export interface ImportNode {
+  names: string[];       // imported symbols
+  modulePath: string;    // path to the module
+}
+
 // Program node - root of AST
 export interface ProgramNode extends ASTNode {
   kind: "Program";
   name: string;
   org?: number;  // Optional origin address
+  imports: ImportNode[];  // Module imports
+  globals: GlobalVarDecl[];  // Global variables
   procedures: ProcedureNode[];
   functions: FunctionNode[];
+}
+
+// Global variable declaration
+export interface GlobalVarDecl {
+  name: string;
+  varType: VarType;
+  isPublic: boolean;
 }
 
 // Variable declaration
@@ -40,6 +55,7 @@ export interface ProcedureNode extends ASTNode {
   params: VarDecl[];
   locals: VarDecl[];
   body: StatementNode[];
+  isPublic: boolean;
 }
 
 // Function declaration
@@ -50,6 +66,7 @@ export interface FunctionNode extends ASTNode {
   returnType: DataType;
   locals: VarDecl[];
   body: StatementNode[];
+  isPublic: boolean;
 }
 
 // Statements
