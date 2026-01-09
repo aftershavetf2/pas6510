@@ -10,8 +10,8 @@ start:
 
 ; Procedure: main
 main:
-  lda #<0
-  ldx #>0
+  lda #0
+  ldx #0
   sta _var_sum
   stx _var_sum+1
   lda #0
@@ -45,7 +45,7 @@ _for_0:
 ; Runtime library
 
 _tmp: .byte 0
-_tmp16: .word 0
+_tmp16: .byte 0, 0
 
 _mul_a: .byte 0
 _mul_b: .byte 0
@@ -81,8 +81,8 @@ _div_done:
   rts
 
 ; write_u16_ln - print 16-bit number and newline
-_print_val: .word 0
-_print_buf: .res 6
+_print_val: .byte 0, 0
+_print_buf: .byte 0, 0, 0, 0, 0, 0
 write_u16_ln:
   sta _print_val
   stx _print_val+1
@@ -138,6 +138,6 @@ _d10_skip:
 
 ; Variables
 _var_sum:
-  .res 2
+  .byte 0, 0
 _var_i:
   .byte 0

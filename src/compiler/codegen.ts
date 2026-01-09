@@ -81,11 +81,7 @@ export class CodeGenerator {
     this.emit("; Variables");
     for (const [name, v] of this.variables) {
       this.emit(`${this.varLabel(name)}:`);
-      if (v.size === 1) {
-        this.emit(`  .byte 0`);
-      } else {
-        this.emit(`  .res ${v.size}`);
-      }
+      this.emitBytes(v.size);
     }
 
     return this.output.join("\n");
@@ -93,6 +89,11 @@ export class CodeGenerator {
 
   private emit(line: string): void {
     this.output.push(line);
+  }
+
+  private emitBytes(count: number): void {
+    const zeros = new Array(count).fill("0").join(", ");
+    this.emit(`  .byte ${zeros}`);
   }
 
   private newLabel(prefix: string): string {
@@ -509,8 +510,10 @@ export class CodeGenerator {
   private generateExpr16(expr: ExpressionNode): void {
     switch (expr.kind) {
       case "NumberLiteral":
-        this.emit(`  lda #<${expr.value}`);
-        this.emit(`  ldx #>${expr.value}`);
+        const lo = expr.value & 0xff;
+        const hi = (expr.value >> 8) & 0xff;
+        this.emit(`  lda #${lo}`);
+        this.emit(`  ldx #${hi}`);
         break;
 
       case "Variable":
@@ -595,7 +598,7 @@ export class CodeGenerator {
 
     // Temporary storage
     this.emit("_tmp: .byte 0");
-    this.emit("_tmp16: .word 0");
+    this.emit("_tmp16: .byte 0, 0");
     this.emit("");
 
     // 8-bit multiply (result in A)
@@ -637,8 +640,8 @@ export class CodeGenerator {
 
     // Print u16 (simple decimal output)
     this.emit("; write_u16_ln - print 16-bit number and newline");
-    this.emit("_print_val: .word 0");
-    this.emit("_print_buf: .res 6");
+    this.emit("_print_val: .byte 0, 0");
+    this.emit("_print_buf: .byte 0, 0, 0, 0, 0, 0");
     this.emit("write_u16_ln:");
     this.emit("  sta _print_val");
     this.emit("  stx _print_val+1");
