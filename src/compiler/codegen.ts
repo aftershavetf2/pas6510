@@ -22,6 +22,7 @@ interface Variable {
   varType: VarType;
   address: number;
   size: number;
+  scope: string | null;  // null for globals, proc name for locals
 }
 
 interface Constant {
@@ -124,8 +125,10 @@ export class CodeGenerator {
     // Variable storage
     this.emit("");
     this.emit("; Variables");
-    for (const [name, v] of this.variables) {
-      this.emit(`${this.varLabel(name)}:`);
+    for (const [key, v] of this.variables) {
+      // Generate label directly from variable info to avoid double-prefixing
+      const label = v.scope ? `_var_${v.scope}_${v.name}` : `_var_${v.name}`;
+      this.emit(`${label}:`);
       this.emitBytes(v.size);
     }
 
@@ -270,8 +273,10 @@ export class CodeGenerator {
     // Variable storage
     this.emit("");
     this.emit("; Variables");
-    for (const [name, v] of this.variables) {
-      this.emit(`${this.varLabel(name)}:`);
+    for (const [key, v] of this.variables) {
+      // Generate label directly from variable info to avoid double-prefixing
+      const label = v.scope ? `_var_${v.scope}_${v.name}` : `_var_${v.name}`;
+      this.emit(`${label}:`);
       this.emitBytes(v.size);
     }
 
@@ -292,7 +297,16 @@ export class CodeGenerator {
   }
 
   private varLabel(name: string): string {
+    const v = this.getVariable(name);
+    if (v && v.scope) {
+      return `_var_${v.scope}_${name}`;
+    }
     return `_var_${name}`;
+  }
+
+  // Generate variable label for a specific proc (used for function call parameters)
+  private varLabelForProc(procName: string, varName: string): string {
+    return `_var_${procName}_${varName}`;
   }
 
   // Returns the constant value if expr is a compile-time constant, null otherwise
@@ -323,7 +337,7 @@ export class CodeGenerator {
     // Check if left is constant and right is u8 variable
     const baseConst = this.getConstantValue(expr.left);
     if (baseConst !== null && expr.right.kind === "Variable") {
-      const v = this.variables.get(expr.right.name);
+      const v = this.getVariable(expr.right.name);
       if (v && (v.varType === "u8" || v.varType === "i8")) {
         return { base: baseConst, indexVar: expr.right.name };
       }
@@ -332,7 +346,7 @@ export class CodeGenerator {
     // Check reverse: right is constant, left is u8 variable
     const baseConst2 = this.getConstantValue(expr.right);
     if (baseConst2 !== null && expr.left.kind === "Variable") {
-      const v = this.variables.get(expr.left.name);
+      const v = this.getVariable(expr.left.name);
       if (v && (v.varType === "u8" || v.varType === "i8")) {
         return { base: baseConst2, indexVar: expr.left.name };
       }
@@ -378,8 +392,10 @@ export class CodeGenerator {
       varType: decl.varType,
       address,
       size,
+      scope: this.currentProc,
     };
-    this.variables.set(decl.name, v);
+    // Use qualified key for locals: "procName.varName"
+    this.variables.set(`${this.currentProc}.${decl.name}`, v);
     return v;
   }
 
@@ -393,9 +409,19 @@ export class CodeGenerator {
       varType: decl.varType,
       address,
       size,
+      scope: null,
     };
     this.variables.set(decl.name, v);
     return v;
+  }
+
+  // Look up variable: first check local scope, then global
+  private getVariable(name: string): Variable | undefined {
+    // Try local scope first
+    const local = this.variables.get(`${this.currentProc}.${name}`);
+    if (local) return local;
+    // Fall back to global
+    return this.variables.get(name);
   }
 
   private registerConstant(decl: GlobalConstDecl | ConstDecl): void {
@@ -498,7 +524,7 @@ export class CodeGenerator {
       if (this.constants.has(target.name)) {
         throw new Error(`Cannot assign to constant: ${target.name}`);
       }
-      const v = this.variables.get(target.name);
+      const v = this.getVariable(target.name);
       if (!v) {
         throw new Error(`Unknown variable: ${target.name}`);
       }
@@ -515,7 +541,7 @@ export class CodeGenerator {
       }
     } else if (target.kind === "ArrayAccess") {
       // Array element assignment
-      const v = this.variables.get(target.array);
+      const v = this.getVariable(target.array);
       if (!v || !isArrayType(v.varType)) {
         throw new Error(`Unknown array: ${target.array}`);
       }
@@ -542,11 +568,11 @@ export class CodeGenerator {
     const endLabel = this.newLabel("endfor");
 
     // Ensure loop variable exists
-    if (!this.variables.has(stmt.variable)) {
+    if (!this.getVariable(stmt.variable)) {
       this.allocateVariable({ name: stmt.variable, varType: "u8" });
     }
 
-    const v = this.variables.get(stmt.variable)!;
+    const v = this.getVariable(stmt.variable)!;
 
     // Initialize loop variable
     this.generateExpr8(stmt.start);
@@ -767,7 +793,7 @@ export class CodeGenerator {
         this.emit(`  inc ${this.formatAddr(addrConst)}`);
       } else if (stmt.args[0].kind === "Variable") {
         // Variable reference - check type
-        const v = this.variables.get(stmt.args[0].name);
+        const v = this.getVariable(stmt.args[0].name);
         if (v) {
           if (this.is16Bit(v.varType)) {
             // 16-bit increment
@@ -801,7 +827,7 @@ export class CodeGenerator {
         this.emit(`  dec ${this.formatAddr(addrConst)}`);
       } else if (stmt.args[0].kind === "Variable") {
         // Variable reference - check type
-        const v = this.variables.get(stmt.args[0].name);
+        const v = this.getVariable(stmt.args[0].name);
         if (v) {
           if (this.is16Bit(v.varType)) {
             // 16-bit decrement - check if low byte is 0 before decrementing
@@ -834,19 +860,20 @@ export class CodeGenerator {
     // Look up function signature for user-defined functions
     const sig = this.functionSignatures.get(stmt.name);
     if (sig && sig.params.length > 0) {
-      // Store arguments to parameter variables
+      // Store arguments to parameter variables (in target function's scope)
       for (let i = 0; i < stmt.args.length && i < sig.params.length; i++) {
         const param = sig.params[i];
         const paramType = param.varType;
         const is16Bit = paramType === "i16" || paramType === "u16" || paramType === "ptr";
+        const paramLabel = this.varLabelForProc(stmt.name, param.name);
 
         if (is16Bit) {
           this.generateExpr16(stmt.args[i]);
-          this.emit(`  sta ${this.varLabel(param.name)}`);
-          this.emit(`  stx ${this.varLabel(param.name)}+1`);
+          this.emit(`  sta ${paramLabel}`);
+          this.emit(`  stx ${paramLabel}+1`);
         } else {
           this.generateExpr8(stmt.args[i]);
-          this.emit(`  sta ${this.varLabel(param.name)}`);
+          this.emit(`  sta ${paramLabel}`);
         }
       }
     }
@@ -882,7 +909,7 @@ export class CodeGenerator {
           this.emit(`  lda #${c8.value & 0xff}`);
           break;
         }
-        const v = this.variables.get(expr.name);
+        const v = this.getVariable(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);
         }
@@ -943,13 +970,14 @@ export class CodeGenerator {
               const paramIs16Bit = param.varType === "i16" ||
                                    param.varType === "u16" ||
                                    param.varType === "ptr";
+              const paramLabel = this.varLabelForProc(expr.name, param.name);
               if (paramIs16Bit) {
                 this.generateExpr16(expr.args[i]);
-                this.emit(`  sta ${this.varLabel(param.name)}`);
-                this.emit(`  stx ${this.varLabel(param.name)}+1`);
+                this.emit(`  sta ${paramLabel}`);
+                this.emit(`  stx ${paramLabel}+1`);
               } else {
                 this.generateExpr8(expr.args[i]);
-                this.emit(`  sta ${this.varLabel(param.name)}`);
+                this.emit(`  sta ${paramLabel}`);
               }
             }
           }
@@ -1028,7 +1056,7 @@ export class CodeGenerator {
           this.emit(`  ldx #${cHi}`);
           break;
         }
-        const v = this.variables.get(expr.name);
+        const v = this.getVariable(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);
         }
@@ -1052,20 +1080,21 @@ export class CodeGenerator {
                              funcReturnType === "u16" ||
                              funcReturnType === "ptr";
 
-        // Store arguments to parameter variables
+        // Store arguments to parameter variables (in target function's scope)
         if (callSig && callSig.params.length > 0) {
           for (let i = 0; i < expr.args.length && i < callSig.params.length; i++) {
             const param = callSig.params[i];
             const paramIs16Bit = param.varType === "i16" ||
                                  param.varType === "u16" ||
                                  param.varType === "ptr";
+            const paramLabel = this.varLabelForProc(expr.name, param.name);
             if (paramIs16Bit) {
               this.generateExpr16(expr.args[i]);
-              this.emit(`  sta ${this.varLabel(param.name)}`);
-              this.emit(`  stx ${this.varLabel(param.name)}+1`);
+              this.emit(`  sta ${paramLabel}`);
+              this.emit(`  stx ${paramLabel}+1`);
             } else {
               this.generateExpr8(expr.args[i]);
-              this.emit(`  sta ${this.varLabel(param.name)}`);
+              this.emit(`  sta ${paramLabel}`);
             }
           }
         }
