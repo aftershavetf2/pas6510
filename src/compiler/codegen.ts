@@ -469,10 +469,16 @@ export class CodeGenerator {
 
     // Compare with end value (use jmp for long loops)
     if (stmt.end.kind === "NumberLiteral") {
-      this.emit(`  cmp #${stmt.end.value + 1}`);
-      this.emit(`  beq ${endLabel}`);
-      this.emit(`  jmp ${loopLabel}`);
-      this.emit(`${endLabel}:`);
+      if (stmt.end.value === 255) {
+        // Special case: 0-255 loop - check if wrapped to 0
+        this.emit(`  bne ${loopLabel}`);
+        this.emit(`${endLabel}:`);
+      } else {
+        this.emit(`  cmp #${stmt.end.value + 1}`);
+        this.emit(`  beq ${endLabel}`);
+        this.emit(`  jmp ${loopLabel}`);
+        this.emit(`${endLabel}:`);
+      }
     } else {
       // Need to evaluate end expression and compare
       this.generateExpr8(stmt.end);
