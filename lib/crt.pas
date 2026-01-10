@@ -253,6 +253,9 @@ pub proc putnum(num: u16)
 end;
 
 pub proc wait_line(line:u8)
+    while peek($d011) > 127 do
+    end;
+
     while peek($d012) <> line do
     end;
 end;
