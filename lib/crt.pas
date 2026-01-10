@@ -5,10 +5,10 @@ program crt
 { Color memory:  $D800 (55296) }
 { Screen size:   40x25 characters }
 
-pub var SCREEN_BASE: u16;
-pub var COLOR_BASE: u16;
-pub var SCREEN_WIDTH: u8;
-pub var SCREEN_HEIGHT: u8;
+pub const SCREEN_BASE: u16 = $0400;
+pub const COLOR_BASE: u16 = $D800;
+pub const SCREEN_WIDTH: u8 = 40;
+pub const SCREEN_HEIGHT: u8 = 25;
 
 { Current cursor position }
 pub var cursor_x: u8;
@@ -23,13 +23,9 @@ pub var color_addr: u16;
 
 { Initialize CRT module }
 pub proc crt_init()
-    SCREEN_BASE := 1024;
-    COLOR_BASE := 55296;
-    SCREEN_WIDTH := 40;
-    SCREEN_HEIGHT := 25;
     cursor_x := 0;
     cursor_y := 0;
-    text_color := 14;
+    text_color := $0E;
 end;
 
 { Calculate screen address from cursor position }

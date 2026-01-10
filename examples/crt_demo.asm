@@ -15,18 +15,6 @@ start:
 ; Procedure: crt_init
 crt_init:
   lda #0
-  ldx #4
-  sta _var_SCREEN_BASE
-  stx _var_SCREEN_BASE+1
-  lda #0
-  ldx #216
-  sta _var_COLOR_BASE
-  stx _var_COLOR_BASE+1
-  lda #40
-  sta _var_SCREEN_WIDTH
-  lda #25
-  sta _var_SCREEN_HEIGHT
-  lda #0
   sta _var_cursor_x
   lda #0
   sta _var_cursor_y
@@ -79,8 +67,8 @@ _gt_cont_3:
   sta _var_y_temp
   jmp _while_0
 _endwhile_1:
-  lda _var_SCREEN_BASE
-  ldx _var_SCREEN_BASE+1
+  lda #0
+  ldx #4
   sta _tmp16
   stx _tmp16+1
   lda _var_row_offset
@@ -152,8 +140,8 @@ _gt_cont_7:
   sta _var_y_temp
   jmp _while_4
 _endwhile_5:
-  lda _var_COLOR_BASE
-  ldx _var_COLOR_BASE+1
+  lda #0
+  ldx #216
   sta _tmp16
   stx _tmp16+1
   lda _var_row_offset
@@ -182,12 +170,12 @@ _endwhile_5:
 
 ; Procedure: clear
 clear:
-  lda _var_SCREEN_BASE
-  ldx _var_SCREEN_BASE+1
+  lda #0
+  ldx #4
   sta _var_addr
   stx _var_addr+1
-  lda _var_COLOR_BASE
-  ldx _var_COLOR_BASE+1
+  lda #0
+  ldx #216
   sta _var_caddr
   stx _var_caddr+1
   lda #0
@@ -306,7 +294,7 @@ newline:
   sta _var_cursor_y
   lda _var_cursor_y
   pha
-  lda _var_SCREEN_HEIGHT
+  lda #25
   sta _tmp
   pla
   cmp _tmp
@@ -346,7 +334,7 @@ putch:
   sta _var_cursor_x
   lda _var_cursor_x
   pha
-  lda _var_SCREEN_WIDTH
+  lda #40
   sta _tmp
   pla
   cmp _tmp
@@ -1158,14 +1146,6 @@ _d10_skip:
   rts
 
 ; Variables
-_var_SCREEN_BASE:
-  .byte 0, 0
-_var_COLOR_BASE:
-  .byte 0, 0
-_var_SCREEN_WIDTH:
-  .byte 0
-_var_SCREEN_HEIGHT:
-  .byte 0
 _var_cursor_x:
   .byte 0
 _var_cursor_y:
