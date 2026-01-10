@@ -28,16 +28,12 @@ memset:
 ; Procedure: main
 main:
   sei
-  lda #0
-  sta _var_main_x
 _while_0:
   lda #1
   bne _skip_2
   jmp _endwhile_1
 _skip_2:
-  lda _var_main_x
-  sta $d418
-  inc _var_main_x
+  dec $d418
   jmp _while_0
 _endwhile_1:
   rts
@@ -144,6 +140,4 @@ _var_memset_addr:
 _var_memset_len:
   .byte 0
 _var_memset_value:
-  .byte 0
-_var_main_x:
   .byte 0
