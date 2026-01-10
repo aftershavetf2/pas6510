@@ -37,6 +37,7 @@ end;
 ```
 
 Output:
+
 ![Alt text](/screenshots/adder2.png?raw=true "Result of running adder2.prg")
 
 ## Language
