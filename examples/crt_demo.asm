@@ -45,11 +45,7 @@ calc_addr:
   sta _var_calc_addr_y_temp
 _while_0:
   lda _var_calc_addr_y_temp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_2
   bcs _gt_cont_3
 _gt_false_2:
@@ -111,11 +107,7 @@ calc_color_addr:
   sta _var_calc_color_addr_y_temp
 _while_4:
   lda _var_calc_color_addr_y_temp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_6
   bcs _gt_cont_7
 _gt_false_6:
@@ -333,11 +325,7 @@ newline:
   sta _var_cursor_x
   inc _var_cursor_y
   lda _var_cursor_y
-  pha
-  lda #25
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #25
   bcs _skip_42
   jmp _else_40
 _skip_42:
@@ -366,11 +354,7 @@ putch:
   sta (_poke_addr),y
   inc _var_cursor_x
   lda _var_cursor_x
-  pha
-  lda #40
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #40
   bcs _skip_45
   jmp _else_43
 _skip_45:
@@ -383,20 +367,12 @@ putc:
   lda _var_putc_ch
   sta _var_putc_sc
   lda _var_putc_sc
-  pha
-  lda #65
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #65
   bcs _skip_48
   jmp _else_46
 _skip_48:
   lda _var_putc_sc
-  pha
-  lda #90
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #90
   beq _le_cont_52
   bcc _le_cont_52
   jmp _else_49
@@ -414,20 +390,12 @@ _le_cont_52:
 _else_49:
 _else_46:
   lda _var_putc_sc
-  pha
-  lda #97
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #97
   bcs _skip_55
   jmp _else_53
 _skip_55:
   lda _var_putc_sc
-  pha
-  lda #122
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #122
   beq _le_cont_59
   bcc _le_cont_59
   jmp _else_56
@@ -465,11 +433,7 @@ hline:
   sta _var_hline_ytmp
 _while_60:
   lda _var_hline_ytmp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_62
   bcs _gt_cont_63
 _gt_false_62:
@@ -617,11 +581,7 @@ fillrect:
   sta _var_fillrect_ytmp
 _while_72:
   lda _var_fillrect_ytmp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_74
   bcs _gt_cont_75
 _gt_false_74:
@@ -701,11 +661,7 @@ _endwhile_73:
   sta _var_fillrect_row
 _while_76:
   lda _var_fillrect_row
-  pha
-  lda _var_fillrect_h
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp _var_fillrect_h
   bcc _skip_78
   jmp _endwhile_77
 _skip_78:
@@ -806,11 +762,7 @@ box:
   sta _var_box_ytmp
 _while_87:
   lda _var_box_ytmp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_89
   bcs _gt_cont_90
 _gt_false_89:
@@ -1362,11 +1314,7 @@ _memset_done_106:
 ; Procedure: putnum
 putnum:
   lda _var_putnum_num
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _skip_112
   jmp _else_110
 _skip_112:
@@ -1383,11 +1331,7 @@ _else_110:
   stx _var_putnum_temp+1
 _while_113:
   lda _var_putnum_temp
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_115
   bcs _gt_cont_116
 _gt_false_115:
@@ -1444,11 +1388,7 @@ _gt_cont_116:
 _endwhile_114:
 _while_117:
   lda _var_putnum_count
-  pha
-  lda #0
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #0
   beq _gt_false_119
   bcs _gt_cont_120
 _gt_false_119:
@@ -1468,11 +1408,7 @@ _endwhile_118:
 wait_line:
 _while_121:
   lda $d011
-  pha
-  lda #127
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #127
   beq _gt_false_123
   bcs _gt_cont_124
 _gt_false_123:
@@ -1482,11 +1418,7 @@ _gt_cont_124:
 _endwhile_122:
 _while_125:
   lda $d012
-  pha
-  lda _var_wait_line_line
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp _var_wait_line_line
   bne _skip_127
   jmp _endwhile_126
 _skip_127:

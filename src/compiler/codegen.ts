@@ -667,6 +667,39 @@ export class CodeGenerator {
     }
   }
 
+  // Check if expression is "simple" for comparison optimization
+  // Simple expressions can be compared directly without using stack/tmp
+  private isSimpleExpr(expr: ExpressionNode): boolean {
+    if (expr.kind === "NumberLiteral") return true;
+    if (expr.kind === "Variable") {
+      // Simple if it's a variable or constant
+      return this.getVariable(expr.name) !== undefined ||
+             this.constants.has(expr.name);
+    }
+    if (expr.kind === "CallExpr" && expr.name === "peek") {
+      // peek(constant_address) is simple
+      return this.getConstantValue(expr.args[0]) !== null;
+    }
+    return false;
+  }
+
+  // Generate cmp instruction for a simple expression (assumes A contains left operand)
+  private generateCmpSimple(expr: ExpressionNode): void {
+    if (expr.kind === "NumberLiteral") {
+      this.emit(`  cmp #${expr.value & 0xff}`);
+    } else if (expr.kind === "Variable") {
+      const c = this.constants.get(expr.name);
+      if (c) {
+        this.emit(`  cmp #${c.value & 0xff}`);
+      } else {
+        this.emit(`  cmp ${this.varLabel(expr.name)}`);
+      }
+    } else if (expr.kind === "CallExpr" && expr.name === "peek") {
+      const addr = this.getConstantValue(expr.args[0])!;
+      this.emit(`  cmp ${this.formatAddr(addr)}`);
+    }
+  }
+
   // Helper to emit a "long branch" that works for any distance
   // Uses inverted short branch over a jmp
   private emitLongBranch(branchIfTrue: string, falseLabel: string): void {
@@ -682,15 +715,18 @@ export class CodeGenerator {
 
       // Generate left side into A
       this.generateExpr8(expr.left);
-      this.emit(`  pha`); // Save on stack
 
-      // Generate right side into A
-      this.generateExpr8(expr.right);
-      this.emit(`  sta _tmp`);
-
-      // Restore left into A
-      this.emit(`  pla`);
-      this.emit(`  cmp _tmp`);
+      if (this.isSimpleExpr(expr.right)) {
+        // Optimized path: compare directly against simple expression
+        this.generateCmpSimple(expr.right);
+      } else {
+        // Fallback: use stack and _tmp
+        this.emit(`  pha`); // Save on stack
+        this.generateExpr8(expr.right);
+        this.emit(`  sta _tmp`);
+        this.emit(`  pla`);
+        this.emit(`  cmp _tmp`);
+      }
 
       // Use long branches to avoid range errors
       switch (op) {

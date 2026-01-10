@@ -75,11 +75,7 @@ test_u8_identity:
   jsr identity_u8
   sta _var_test_u8_identity_result
   lda _var_test_u8_identity_result
-  pha
-  lda #55
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #55
   beq _skip_2
   jmp _else_0
 _skip_2:
@@ -99,11 +95,7 @@ test_u8_add:
   jsr add_u8
   sta _var_test_u8_add_result
   lda _var_test_u8_add_result
-  pha
-  lda #30
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #30
   beq _skip_5
   jmp _else_3
 _skip_5:
@@ -121,11 +113,7 @@ test_u8_double:
   jsr double_u8
   sta _var_test_u8_double_result
   lda _var_test_u8_double_result
-  pha
-  lda #50
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #50
   beq _skip_8
   jmp _else_6
 _skip_8:
@@ -141,11 +129,7 @@ test_u8_const:
   jsr const_u8
   sta _var_test_u8_const_result
   lda _var_test_u8_const_result
-  pha
-  lda #42
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #42
   beq _skip_11
   jmp _else_9
 _skip_11:
@@ -194,11 +178,7 @@ test_procedure:
   sta _var_set_global_x
   jsr set_global
   lda _var_global_val
-  pha
-  lda #99
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #99
   beq _skip_14
   jmp _else_12
 _skip_14:
@@ -216,11 +196,7 @@ test_proc_increment:
   jsr increment_global
   jsr increment_global
   lda _var_global_val
-  pha
-  lda #12
-  sta _tmp
-  pla
-  cmp _tmp
+  cmp #12
   beq _skip_17
   jmp _else_15
 _skip_17:
