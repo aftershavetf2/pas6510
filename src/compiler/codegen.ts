@@ -617,6 +617,15 @@ export class CodeGenerator {
   }
 
   private generateCall(stmt: { name: string; args: ExpressionNode[] }): void {
+    // Handle built-in CPU instructions
+    if (stmt.name === "irq_enable") {
+      this.emit(`  cli`);
+      return;
+    } else if (stmt.name === "irq_disable") {
+      this.emit(`  sei`);
+      return;
+    }
+
     // Handle built-in functions with arguments
     if (stmt.name === "write_u16_ln") {
       // Pass 16-bit argument in A (low) and X (high)
