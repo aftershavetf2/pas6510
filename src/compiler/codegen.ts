@@ -855,6 +855,67 @@ export class CodeGenerator {
         }
       }
       return;
+    } else if (stmt.name === "memset") {
+      // memset(addr, len, value) - fast memory fill
+      // If len=0, fills 256 bytes
+      const addrConst = this.getConstantValue(stmt.args[0]);
+      const doneLabel = this.newLabel("memset_done");
+      const fullLabel = this.newLabel("memset_full");
+      const loopLabel = this.newLabel("memset_loop");
+      const fullLoopLabel = this.newLabel("memset_full_loop");
+
+      // Load value into A
+      this.generateExpr8(stmt.args[2]);
+      this.emit(`  pha`);  // Save value
+
+      // Load length into Y
+      this.generateExpr8(stmt.args[1]);
+      this.emit(`  tay`);
+      this.emit(`  pla`);  // Restore value to A
+
+      if (addrConst !== null) {
+        // Constant address - use absolute indexed
+        this.emit(`  cpy #0`);
+        this.emit(`  beq ${fullLabel}`);
+        // len = 1-255
+        this.emit(`${loopLabel}:`);
+        this.emit(`  dey`);
+        this.emit(`  sta ${this.formatAddr(addrConst)},y`);
+        this.emit(`  bne ${loopLabel}`);
+        this.emit(`  beq ${doneLabel}`);
+        // len = 0 means 256 bytes
+        this.emit(`${fullLabel}:`);
+        this.emit(`${fullLoopLabel}:`);
+        this.emit(`  sta ${this.formatAddr(addrConst)},y`);
+        this.emit(`  iny`);
+        this.emit(`  bne ${fullLoopLabel}`);
+        this.emit(`${doneLabel}:`);
+      } else {
+        // Variable address - use indirect indexed
+        this.emit(`  pha`);  // Save value
+        this.emit(`  sty _tmp`);  // Save length
+        this.generateExpr16(stmt.args[0]);
+        this.emit(`  sta _poke_addr`);
+        this.emit(`  stx _poke_addr+1`);
+        this.emit(`  ldy _tmp`);  // Restore length
+        this.emit(`  pla`);  // Restore value
+        this.emit(`  cpy #0`);
+        this.emit(`  beq ${fullLabel}`);
+        // len = 1-255
+        this.emit(`${loopLabel}:`);
+        this.emit(`  dey`);
+        this.emit(`  sta (_poke_addr),y`);
+        this.emit(`  bne ${loopLabel}`);
+        this.emit(`  beq ${doneLabel}`);
+        // len = 0 means 256 bytes
+        this.emit(`${fullLabel}:`);
+        this.emit(`${fullLoopLabel}:`);
+        this.emit(`  sta (_poke_addr),y`);
+        this.emit(`  iny`);
+        this.emit(`  bne ${fullLoopLabel}`);
+        this.emit(`${doneLabel}:`);
+      }
+      return;
     }
 
     // Look up function signature for user-defined functions

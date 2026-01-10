@@ -1,3 +1,5 @@
+import memset from "sys.pas";
+
 program crt
 
 { CRT module for C64 screen handling }
@@ -60,28 +62,27 @@ pub proc calc_color_addr()
     color_addr := COLOR_BASE + row_offset + cursor_x;
 end;
 
-{ Clear the screen with spaces and current color }
 pub proc clear()
-    var row: u8;
-    var col: u8;
-    var addr: u16;
-    var caddr: u16;
+    var i : u8;
 
-    addr := SCREEN_BASE;
-    caddr := COLOR_BASE;
+    const addr1 : u16 = SCREEN_BASE;
+    const addr2 : u16 = SCREEN_BASE + 256;
+    const addr3 : u16 = SCREEN_BASE + 512;
+    const addr4 : u16 = SCREEN_BASE + 768;
 
-    row := 0;
-    while row < 25 do
-        col := 0;
-        while col < 40 do
-            poke(addr, 32);
-            poke(caddr, text_color);
-            inc(addr);
-            inc(caddr);
-            inc(col);
-        end;
-        inc(row);
-    end;
+    const caddr1 : u16 = COLOR_BASE;
+    const caddr2 : u16 = COLOR_BASE + 256;
+    const caddr3 : u16 = COLOR_BASE + 512;
+    const caddr4 : u16 = COLOR_BASE + 768;
+
+    memset(addr1, 0, 32);
+    memset(caddr1, 0, text_color);
+    memset(addr2, 0, 32);
+    memset(caddr2, 0, text_color);
+    memset(addr3, 0, 32);
+    memset(caddr3, 0, text_color);
+    memset(addr4, 231, 32);
+    memset(caddr4, 231, text_color);
 
     cursor_x := 0;
     cursor_y := 0;
@@ -146,81 +147,111 @@ pub proc setcolor(c: u8)
     text_color := c;
 end;
 
-{ Draw horizontal line }
+{ Draw horizontal line - optimized with memset }
 pub proc hline(ch: u8, len: u8)
-    var i: u8;
-    i := 0;
-    while i < len do
-        putch(ch);
-        inc(i);
+    var saddr: u16;
+    var caddr: u16;
+    var yoff: u16;
+    var ytmp: u8;
+
+    { Calculate y * 40 offset }
+    yoff := 0;
+    ytmp := cursor_y;
+    while ytmp > 0 do
+        yoff := yoff + 40;
+        dec(ytmp);
     end;
+
+    saddr := SCREEN_BASE + yoff + cursor_x;
+    caddr := COLOR_BASE + yoff + cursor_x;
+
+    memset(saddr, len, ch);
+    memset(caddr, len, text_color);
+
+    cursor_x := cursor_x + len;
 end;
 
-{ Fill rectangle with character }
+{ Fill rectangle with character - optimized with memset }
 pub proc fillrect(x: u8, y: u8, w: u8, h: u8, ch: u8)
     var row: u8;
-    var col: u8;
-    var start_x: u8;
-    var start_y: u8;
+    var saddr: u16;
+    var caddr: u16;
+    var yoff: u16;
+    var ytmp: u8;
 
-    start_x := x;
-    start_y := y;
+    { Calculate y * 40 offset }
+    yoff := 0;
+    ytmp := y;
+    while ytmp > 0 do
+        yoff := yoff + 40;
+        dec(ytmp);
+    end;
+
+    saddr := SCREEN_BASE + yoff + x;
+    caddr := COLOR_BASE + yoff + x;
 
     row := 0;
     while row < h do
-        cursor_x := start_x;
-        cursor_y := start_y + row;
-        col := 0;
-        while col < w do
-            calc_addr();
-            calc_color_addr();
-            poke(screen_addr, ch);
-            poke(color_addr, text_color);
-            inc(cursor_x);
-            inc(col);
-        end;
+        memset(saddr, w, ch);
+        memset(caddr, w, text_color);
+        saddr := saddr + 40;
+        caddr := caddr + 40;
         inc(row);
     end;
 end;
 
-{ Draw box outline }
+{ Draw box outline - optimized with memset for horizontal lines }
 { Screen codes: 112=top-left, 110=top-right, 109=bottom-left, 125=bottom-right }
 { 64=horizontal line, 93=vertical line }
 pub proc box(x: u8, y: u8, w: u8, h: u8)
     var i: u8;
+    var saddr: u16;
+    var caddr: u16;
+    var yoff: u16;
+    var ytmp: u8;
+    var inner_w: u8;
+
+    { Calculate y * 40 offset }
+    yoff := 0;
+    ytmp := y;
+    while ytmp > 0 do
+        yoff := yoff + 40;
+        dec(ytmp);
+    end;
+
+    saddr := SCREEN_BASE + yoff + x;
+    caddr := COLOR_BASE + yoff + x;
+    inner_w := w - 2;
 
     { Top line }
-    cursor_x := x;
-    cursor_y := y;
-    putch(112);
-    i := 2;
-    while i < w do
-        putch(64);
-        inc(i);
-    end;
-    putch(110);
+    poke(saddr, 112);
+    poke(caddr, text_color);
+    memset(saddr + 1, inner_w, 64);
+    memset(caddr + 1, inner_w, text_color);
+    poke(saddr + w - 1, 110);
+    poke(caddr + w - 1, text_color);
 
     { Sides }
     i := 1;
     while i < h - 1 do
-        cursor_x := x;
-        cursor_y := y + i;
-        putch(93);
-        cursor_x := x + w - 1;
-        putch(93);
+        saddr := saddr + 40;
+        caddr := caddr + 40;
+        poke(saddr, 93);
+        poke(caddr, text_color);
+        poke(saddr + w - 1, 93);
+        poke(caddr + w - 1, text_color);
         inc(i);
     end;
 
     { Bottom line }
-    cursor_x := x;
-    cursor_y := y + h - 1;
-    putch(109);
-    i := 2;
-    while i < w do
-        putch(64);
-        inc(i);
-    end;
-    putch(125);
+    saddr := saddr + 40;
+    caddr := caddr + 40;
+    poke(saddr, 109);
+    poke(caddr, text_color);
+    memset(saddr + 1, inner_w, 64);
+    memset(caddr + 1, inner_w, text_color);
+    poke(saddr + w - 1, 125);
+    poke(caddr + w - 1, text_color);
 end;
 
 { Write decimal number at cursor }

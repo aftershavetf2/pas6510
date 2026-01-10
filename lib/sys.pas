@@ -10,5 +10,10 @@ end;
 pub proc irq_disable()
 end;
 
+{ Fast memory fill - fills 'len' bytes starting at 'addr' with 'value' }
+{ If len=0, fills 256 bytes }
+pub proc memset(addr: u16, len: u8, value: u8)
+end;
+
 proc main()
 end;

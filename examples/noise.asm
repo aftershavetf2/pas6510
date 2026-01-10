@@ -20,6 +20,10 @@ irq_enable:
 irq_disable:
   rts
 
+; Procedure: memset
+memset:
+  rts
+
 ; Main module: noise
 ; Procedure: main
 main:
@@ -135,5 +139,11 @@ _d10_skip:
   rts
 
 ; Variables
+_var_memset_addr:
+  .byte 0, 0
+_var_memset_len:
+  .byte 0
+_var_memset_value:
+  .byte 0
 _var_main_x:
   .byte 0

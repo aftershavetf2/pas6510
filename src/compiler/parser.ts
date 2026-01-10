@@ -26,6 +26,7 @@ import {
 export class Parser {
   private tokens: Token[];
   private pos: number = 0;
+  private constants: Map<string, number> = new Map();  // Track constant values for evaluation
 
   constructor(tokens: Token[]) {
     this.tokens = tokens;
@@ -158,6 +159,9 @@ export class Parser {
     const value = this.evaluateConstExpr(valueExpr);
     this.expect(TokenType.SEMICOLON);
 
+    // Register constant for use in subsequent constant expressions
+    this.constants.set(name, value);
+
     return { name, varType, value, isPublic };
   }
 
@@ -284,6 +288,9 @@ export class Parser {
     this.expect(TokenType.SEMICOLON);
     decls.push({ name, varType, value });
 
+    // Register constant for use in subsequent constant expressions
+    this.constants.set(name, value);
+
     return decls;
   }
 
@@ -291,6 +298,14 @@ export class Parser {
     switch (expr.kind) {
       case "NumberLiteral":
         return expr.value;
+      case "Variable": {
+        // Look up constant value
+        const value = this.constants.get(expr.name);
+        if (value === undefined) {
+          throw new Error(`Unknown constant: ${expr.name}`);
+        }
+        return value;
+      }
       case "UnaryOp":
         if (expr.operator === "-") {
           return -this.evaluateConstExpr(expr.operand);
