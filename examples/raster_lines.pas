@@ -9,7 +9,7 @@ proc main()
 
     while 1 do
         { Read value from 0xd012 - current raster line }
-        line := peek(53266);
-        poke(53280, line);
+        line := peek($d012);
+        poke($d020, line);
     end;
 end;

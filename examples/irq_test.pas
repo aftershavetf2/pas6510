@@ -8,7 +8,7 @@ proc main()
     irq_disable();
 
     { Do something with interrupts disabled }
-    poke(53280, 0);  { Set border to black }
+    poke($d020, 0);  { Set border to black }
 
     irq_enable();
 end;

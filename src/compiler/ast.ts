@@ -132,6 +132,7 @@ export type ExpressionNode =
 export interface NumberLiteralNode extends ASTNode {
   kind: "NumberLiteral";
   value: number;
+  inferredType?: "u8" | "u16";  // Set for hex literals based on digit count
 }
 
 export interface StringLiteralNode extends ASTNode {

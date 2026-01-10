@@ -249,7 +249,7 @@ export class Parser {
       this.advance();
       this.expect(TokenType.LBRACKET);
       const sizeToken = this.expect(TokenType.NUMBER);
-      const size = this.parseNumber(sizeToken.value);
+      const size = this.parseNumber(sizeToken.value).value;
       this.expect(TokenType.RBRACKET);
       this.expect(TokenType.OF);
       const elementType = this.parseDataType();
@@ -521,7 +521,8 @@ export class Parser {
     // Number literal
     if (this.match(TokenType.NUMBER)) {
       const token = this.advance();
-      return { kind: "NumberLiteral", value: this.parseNumber(token.value) };
+      const parsed = this.parseNumber(token.value);
+      return { kind: "NumberLiteral", value: parsed.value, inferredType: parsed.inferredType };
     }
 
     // String literal
@@ -565,11 +566,15 @@ export class Parser {
     );
   }
 
-  private parseNumber(value: string): number {
+  private parseNumber(value: string): { value: number; inferredType?: "u8" | "u16" } {
     if (value.startsWith("$")) {
-      return parseInt(value.slice(1), 16);
+      const hexPart = value.slice(1);
+      const numValue = parseInt(hexPart, 16);
+      // 1-2 hex digits = u8, 3-4 hex digits = u16
+      const inferredType = hexPart.length <= 2 ? "u8" : "u16";
+      return { value: numValue, inferredType };
     }
-    return parseInt(value, 10);
+    return { value: parseInt(value, 10) };
   }
 
   private tokenToOperator(

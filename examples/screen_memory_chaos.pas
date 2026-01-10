@@ -13,7 +13,7 @@ proc main()
     while 1 do
         for x = 0 to 255 do
             for i = 0 to 255 do
-                poke(1024+i, x);
+                poke($0400+i, x);
             end;
         end;
     end;
