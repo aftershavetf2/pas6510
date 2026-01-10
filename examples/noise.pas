@@ -10,6 +10,6 @@ proc main()
     x := 0;
     while 1 do
         poke($d418, x);
-        x := x + 1;
+        inc(x);
     end;
 end;

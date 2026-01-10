@@ -765,6 +765,24 @@ export class CodeGenerator {
       const addrConst = this.getConstantValue(stmt.args[0]);
       if (addrConst !== null) {
         this.emit(`  inc ${this.formatAddr(addrConst)}`);
+      } else if (stmt.args[0].kind === "Variable") {
+        // Variable reference - check type
+        const v = this.variables.get(stmt.args[0].name);
+        if (v) {
+          if (this.is16Bit(v.varType)) {
+            // 16-bit increment
+            const skip = this.newLabel("inc16");
+            this.emit(`  inc ${this.varLabel(stmt.args[0].name)}`);
+            this.emit(`  bne ${skip}`);
+            this.emit(`  inc ${this.varLabel(stmt.args[0].name)}+1`);
+            this.emit(`${skip}:`);
+          } else {
+            // 8-bit increment
+            this.emit(`  inc ${this.varLabel(stmt.args[0].name)}`);
+          }
+        } else {
+          throw new Error(`Unknown variable: ${stmt.args[0].name}`);
+        }
       } else {
         // Check for indexed addressing (base + index) - uses X register
         const indexed = this.getIndexedAddress(stmt.args[0]);
@@ -772,7 +790,7 @@ export class CodeGenerator {
           this.emit(`  ldx ${this.varLabel(indexed.indexVar)}`);
           this.emit(`  inc ${this.formatAddr(indexed.base)},x`);
         } else {
-          throw new Error("inc() requires a constant address");
+          throw new Error("inc() requires a constant address or variable");
         }
       }
       return;
@@ -781,6 +799,25 @@ export class CodeGenerator {
       const addrConst = this.getConstantValue(stmt.args[0]);
       if (addrConst !== null) {
         this.emit(`  dec ${this.formatAddr(addrConst)}`);
+      } else if (stmt.args[0].kind === "Variable") {
+        // Variable reference - check type
+        const v = this.variables.get(stmt.args[0].name);
+        if (v) {
+          if (this.is16Bit(v.varType)) {
+            // 16-bit decrement - check if low byte is 0 before decrementing
+            const skip = this.newLabel("dec16");
+            this.emit(`  lda ${this.varLabel(stmt.args[0].name)}`);
+            this.emit(`  bne ${skip}`);
+            this.emit(`  dec ${this.varLabel(stmt.args[0].name)}+1`);
+            this.emit(`${skip}:`);
+            this.emit(`  dec ${this.varLabel(stmt.args[0].name)}`);
+          } else {
+            // 8-bit decrement
+            this.emit(`  dec ${this.varLabel(stmt.args[0].name)}`);
+          }
+        } else {
+          throw new Error(`Unknown variable: ${stmt.args[0].name}`);
+        }
       } else {
         // Check for indexed addressing (base + index) - uses X register
         const indexed = this.getIndexedAddress(stmt.args[0]);
@@ -788,7 +825,7 @@ export class CodeGenerator {
           this.emit(`  ldx ${this.varLabel(indexed.indexVar)}`);
           this.emit(`  dec ${this.formatAddr(indexed.base)},x`);
         } else {
-          throw new Error("dec() requires a constant address");
+          throw new Error("dec() requires a constant address or variable");
         }
       }
       return;

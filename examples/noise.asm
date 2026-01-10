@@ -33,14 +33,7 @@ _while_0:
 _skip_2:
   lda _var_x
   sta $d418
-  lda _var_x
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_x
+  inc _var_x
   jmp _while_0
 _endwhile_1:
   rts
