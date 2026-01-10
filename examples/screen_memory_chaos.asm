@@ -44,6 +44,15 @@ _for_5:
   ldy _var_main_i
   lda _var_main_x
   sta $0400,y
+  ldy _var_main_i
+  lda _var_main_x
+  sta $0500,y
+  ldy _var_main_i
+  lda _var_main_x
+  sta $0600,y
+  ldy _var_main_i
+  lda _var_main_x
+  sta $0700,y
   inc _var_main_i
   lda _var_main_i
   bne _for_5

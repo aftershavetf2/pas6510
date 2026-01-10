@@ -14,6 +14,9 @@ proc main()
         for x = 0 to 255 do
             for i = 0 to 255 do
                 poke($0400+i, x);
+                poke($0500+i, x);
+                poke($0600+i, x);
+                poke($0700+i, x);
             end;
         end;
     end;
