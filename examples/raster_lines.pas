@@ -1,4 +1,4 @@
-import irq_disable from "../lib/cpu.pas";
+import irq_disable from "../lib/sys.pas";
 
 program raster_lines
 

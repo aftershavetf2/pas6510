@@ -1,6 +1,6 @@
-program cpu
+program sys
 
-{ CPU module for 6510 low-level operations }
+{ System module for 6510 low-level operations }
 
 { Enable interrupts (CLI instruction) }
 pub proc irq_enable()

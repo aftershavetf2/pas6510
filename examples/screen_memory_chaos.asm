@@ -11,7 +11,7 @@ start:
   jsr main
   rts
 
-; Module: cpu
+; Module: sys
 ; Procedure: irq_enable
 irq_enable:
   rts
