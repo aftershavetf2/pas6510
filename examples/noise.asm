@@ -11,9 +11,19 @@ start:
   jsr main
   rts
 
+; Module: cpu
+; Procedure: irq_enable
+irq_enable:
+  rts
+
+; Procedure: irq_disable
+irq_disable:
+  rts
+
 ; Main module: noise
 ; Procedure: main
 main:
+  sei
   lda #0
   sta _var_x
 _while_0:

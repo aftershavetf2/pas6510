@@ -1,9 +1,13 @@
+import irq_disable from "../lib/cpu.pas";
+
 program screen_memory_chaos
 
 proc main()
     var i: u8;
     var x: u8;
 
+    irq_disable();
+    
     x := 0;
 
     while 1 do
