@@ -37,24 +37,9 @@ _for_3:
   lda #0
   sta _var_i
 _for_5:
-  lda #0
-  ldx #4
-  sta _tmp16
-  stx _tmp16+1
-  lda _var_i
-  ldx #0
-  clc
-  adc _tmp16
-  pha
-  txa
-  adc _tmp16+1
-  tax
-  pla
-  sta _poke_addr
-  stx _poke_addr+1
+  ldy _var_i
   lda _var_x
-  ldy #0
-  sta (_poke_addr),y
+  sta $0400,y
   inc _var_i
   lda _var_i
   bne _for_5

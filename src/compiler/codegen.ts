@@ -314,6 +314,33 @@ export class CodeGenerator {
     return "$" + addr.toString(16).padStart(4, "0");
   }
 
+  // Check if expression is base + index where base is constant and index is u8 variable
+  private getIndexedAddress(expr: ExpressionNode): { base: number; indexVar: string } | null {
+    if (expr.kind !== "BinaryOp" || expr.operator !== "+") {
+      return null;
+    }
+
+    // Check if left is constant and right is u8 variable
+    const baseConst = this.getConstantValue(expr.left);
+    if (baseConst !== null && expr.right.kind === "Variable") {
+      const v = this.variables.get(expr.right.name);
+      if (v && (v.varType === "u8" || v.varType === "i8")) {
+        return { base: baseConst, indexVar: expr.right.name };
+      }
+    }
+
+    // Check reverse: right is constant, left is u8 variable
+    const baseConst2 = this.getConstantValue(expr.right);
+    if (baseConst2 !== null && expr.left.kind === "Variable") {
+      const v = this.variables.get(expr.left.name);
+      if (v && (v.varType === "u8" || v.varType === "i8")) {
+        return { base: baseConst2, indexVar: expr.left.name };
+      }
+    }
+
+    return null;
+  }
+
   private getTypeSize(t: VarType): number {
     if (isArrayType(t)) {
       const elemSize = this.getDataTypeSize(t.elementType);
@@ -715,13 +742,22 @@ export class CodeGenerator {
         this.generateExpr8(stmt.args[1]);
         this.emit(`  sta ${this.formatAddr(addrConst)}`);
       } else {
-        // Variable address - use indirect addressing
-        this.generateExpr16(stmt.args[0]);
-        this.emit(`  sta _poke_addr`);
-        this.emit(`  stx _poke_addr+1`);
-        this.generateExpr8(stmt.args[1]);
-        this.emit(`  ldy #0`);
-        this.emit(`  sta (_poke_addr),y`);
+        // Check for indexed addressing (base + index)
+        const indexed = this.getIndexedAddress(stmt.args[0]);
+        if (indexed) {
+          // Use absolute,Y addressing
+          this.emit(`  ldy ${this.varLabel(indexed.indexVar)}`);
+          this.generateExpr8(stmt.args[1]);
+          this.emit(`  sta ${this.formatAddr(indexed.base)},y`);
+        } else {
+          // Variable address - use indirect addressing
+          this.generateExpr16(stmt.args[0]);
+          this.emit(`  sta _poke_addr`);
+          this.emit(`  stx _poke_addr+1`);
+          this.generateExpr8(stmt.args[1]);
+          this.emit(`  ldy #0`);
+          this.emit(`  sta (_poke_addr),y`);
+        }
       }
       return;
     } else if (stmt.name === "inc") {
@@ -730,7 +766,14 @@ export class CodeGenerator {
       if (addrConst !== null) {
         this.emit(`  inc ${this.formatAddr(addrConst)}`);
       } else {
-        throw new Error("inc() requires a constant address");
+        // Check for indexed addressing (base + index) - uses X register
+        const indexed = this.getIndexedAddress(stmt.args[0]);
+        if (indexed) {
+          this.emit(`  ldx ${this.varLabel(indexed.indexVar)}`);
+          this.emit(`  inc ${this.formatAddr(indexed.base)},x`);
+        } else {
+          throw new Error("inc() requires a constant address");
+        }
       }
       return;
     } else if (stmt.name === "dec") {
@@ -739,7 +782,14 @@ export class CodeGenerator {
       if (addrConst !== null) {
         this.emit(`  dec ${this.formatAddr(addrConst)}`);
       } else {
-        throw new Error("dec() requires a constant address");
+        // Check for indexed addressing (base + index) - uses X register
+        const indexed = this.getIndexedAddress(stmt.args[0]);
+        if (indexed) {
+          this.emit(`  ldx ${this.varLabel(indexed.indexVar)}`);
+          this.emit(`  dec ${this.formatAddr(indexed.base)},x`);
+        } else {
+          throw new Error("dec() requires a constant address");
+        }
       }
       return;
     }
@@ -832,12 +882,20 @@ export class CodeGenerator {
             // Constant address - use direct addressing
             this.emit(`  lda ${this.formatAddr(addrConst)}`);
           } else {
-            // Variable address - use indirect addressing
-            this.generateExpr16(expr.args[0]);
-            this.emit(`  sta _poke_addr`);
-            this.emit(`  stx _poke_addr+1`);
-            this.emit(`  ldy #0`);
-            this.emit(`  lda (_poke_addr),y`);
+            // Check for indexed addressing (base + index)
+            const indexed = this.getIndexedAddress(expr.args[0]);
+            if (indexed) {
+              // Use absolute,Y addressing
+              this.emit(`  ldy ${this.varLabel(indexed.indexVar)}`);
+              this.emit(`  lda ${this.formatAddr(indexed.base)},y`);
+            } else {
+              // Variable address - use indirect addressing
+              this.generateExpr16(expr.args[0]);
+              this.emit(`  sta _poke_addr`);
+              this.emit(`  stx _poke_addr+1`);
+              this.emit(`  ldy #0`);
+              this.emit(`  lda (_poke_addr),y`);
+            }
           }
         } else {
           // Regular function call - store arguments to parameter variables
