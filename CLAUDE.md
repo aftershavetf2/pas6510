@@ -40,6 +40,7 @@ npm start        # Run CLI
 ## Language Features
 
 The pas6510 language is Pascal-like with these differences:
+
 - Types: `i8`, `i16`, `u8`, `u16`, `ptr`, `array[n] of T`
 - `func` instead of `function`, `proc` instead of `procedure`
 - `do`/`end` instead of `begin`/`end`
@@ -102,3 +103,7 @@ end;
 3. CodeGenerator emits 6510 assembly
 4. ca65 assembles to object file
 5. ld65 links to binary, CLI adds PRG header
+
+## Project rules
+
+- All comments, names of variables etc are in US English
