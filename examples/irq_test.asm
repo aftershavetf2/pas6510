@@ -24,13 +24,8 @@ irq_disable:
 ; Procedure: main
 main:
   sei
-  lda #32
-  ldx #208
-  sta _poke_addr
-  stx _poke_addr+1
   lda #0
-  ldy #0
-  sta (_poke_addr),y
+  sta $d020
   cli
   rts
 

@@ -29,20 +29,10 @@ _while_0:
   bne _skip_2
   jmp _endwhile_1
 _skip_2:
-  lda #18
-  ldx #208
-  sta _poke_addr
-  stx _poke_addr+1
-  ldy #0
-  lda (_poke_addr),y
+  lda $d012
   sta _var_line
-  lda #32
-  ldx #208
-  sta _poke_addr
-  stx _poke_addr+1
   lda _var_line
-  ldy #0
-  sta (_poke_addr),y
+  sta $d020
   jmp _while_0
 _endwhile_1:
   rts

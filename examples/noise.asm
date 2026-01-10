@@ -31,13 +31,8 @@ _while_0:
   bne _skip_2
   jmp _endwhile_1
 _skip_2:
-  lda #24
-  ldx #212
-  sta _poke_addr
-  stx _poke_addr+1
   lda _var_x
-  ldy #0
-  sta (_poke_addr),y
+  sta $d418
   lda _var_x
   pha
   lda #1

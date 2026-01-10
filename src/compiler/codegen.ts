@@ -295,6 +295,25 @@ export class CodeGenerator {
     return `_var_${name}`;
   }
 
+  // Returns the constant value if expr is a compile-time constant, null otherwise
+  private getConstantValue(expr: ExpressionNode): number | null {
+    if (expr.kind === "NumberLiteral") {
+      return expr.value;
+    }
+    if (expr.kind === "Variable") {
+      const c = this.constants.get(expr.name);
+      if (c) {
+        return c.value;
+      }
+    }
+    return null;
+  }
+
+  // Format address for 6510 assembly (use hex for readability)
+  private formatAddr(addr: number): string {
+    return "$" + addr.toString(16).padStart(4, "0");
+  }
+
   private getTypeSize(t: VarType): number {
     if (isArrayType(t)) {
       const elemSize = this.getDataTypeSize(t.elementType);
@@ -690,12 +709,38 @@ export class CodeGenerator {
       return;
     } else if (stmt.name === "poke") {
       // poke(addr, value) - write value to memory address
-      this.generateExpr16(stmt.args[0]);
-      this.emit(`  sta _poke_addr`);
-      this.emit(`  stx _poke_addr+1`);
-      this.generateExpr8(stmt.args[1]);
-      this.emit(`  ldy #0`);
-      this.emit(`  sta (_poke_addr),y`);
+      const addrConst = this.getConstantValue(stmt.args[0]);
+      if (addrConst !== null) {
+        // Constant address - use direct addressing
+        this.generateExpr8(stmt.args[1]);
+        this.emit(`  sta ${this.formatAddr(addrConst)}`);
+      } else {
+        // Variable address - use indirect addressing
+        this.generateExpr16(stmt.args[0]);
+        this.emit(`  sta _poke_addr`);
+        this.emit(`  stx _poke_addr+1`);
+        this.generateExpr8(stmt.args[1]);
+        this.emit(`  ldy #0`);
+        this.emit(`  sta (_poke_addr),y`);
+      }
+      return;
+    } else if (stmt.name === "inc") {
+      // inc(addr) - increment memory location
+      const addrConst = this.getConstantValue(stmt.args[0]);
+      if (addrConst !== null) {
+        this.emit(`  inc ${this.formatAddr(addrConst)}`);
+      } else {
+        throw new Error("inc() requires a constant address");
+      }
+      return;
+    } else if (stmt.name === "dec") {
+      // dec(addr) - decrement memory location
+      const addrConst = this.getConstantValue(stmt.args[0]);
+      if (addrConst !== null) {
+        this.emit(`  dec ${this.formatAddr(addrConst)}`);
+      } else {
+        throw new Error("dec() requires a constant address");
+      }
       return;
     }
 
@@ -782,11 +827,18 @@ export class CodeGenerator {
         // Handle built-in peek function
         if (expr.name === "peek" && expr.args.length === 1) {
           // peek(addr) - read byte from memory address
-          this.generateExpr16(expr.args[0]);
-          this.emit(`  sta _poke_addr`);
-          this.emit(`  stx _poke_addr+1`);
-          this.emit(`  ldy #0`);
-          this.emit(`  lda (_poke_addr),y`);
+          const addrConst = this.getConstantValue(expr.args[0]);
+          if (addrConst !== null) {
+            // Constant address - use direct addressing
+            this.emit(`  lda ${this.formatAddr(addrConst)}`);
+          } else {
+            // Variable address - use indirect addressing
+            this.generateExpr16(expr.args[0]);
+            this.emit(`  sta _poke_addr`);
+            this.emit(`  stx _poke_addr+1`);
+            this.emit(`  ldy #0`);
+            this.emit(`  lda (_poke_addr),y`);
+          }
         } else {
           // Regular function call - store arguments to parameter variables
           const sig = this.functionSignatures.get(expr.name);
