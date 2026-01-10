@@ -8,6 +8,8 @@ import {
   ExpressionNode,
   VarDecl,
   GlobalVarDecl,
+  ConstDecl,
+  GlobalConstDecl,
   DataType,
   VarType,
   isArrayType,
@@ -22,6 +24,12 @@ interface Variable {
   size: number;
 }
 
+interface Constant {
+  name: string;
+  varType: VarType;
+  value: number;
+}
+
 interface FunctionSignature {
   params: VarDecl[];
   returnType: DataType | null;  // null for procedures
@@ -30,6 +38,7 @@ interface FunctionSignature {
 export class CodeGenerator {
   private output: string[] = [];
   private variables: Map<string, Variable> = new Map();
+  private constants: Map<string, Constant> = new Map();
   private functionSignatures: Map<string, FunctionSignature> = new Map();
   private nextZpAddress: number = 0x02; // Start after zero page system locations
   private nextRamAddress: number = 0x0800; // Start of free RAM on C64
@@ -40,6 +49,7 @@ export class CodeGenerator {
   generate(program: ProgramNode): string {
     this.output = [];
     this.variables.clear();
+    this.constants.clear();
     this.functionSignatures.clear();
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
@@ -94,6 +104,11 @@ export class CodeGenerator {
       this.allocateGlobalVariable(global);
     }
 
+    // Register global constants (no memory allocation needed)
+    for (const c of program.globalConsts) {
+      this.registerConstant(c);
+    }
+
     // Generate all procedures and functions
     for (const proc of program.procedures) {
       this.generateProcedure(proc);
@@ -120,6 +135,7 @@ export class CodeGenerator {
   generateFromResolved(resolved: ResolvedProgram): string {
     this.output = [];
     this.variables.clear();
+    this.constants.clear();
     this.functionSignatures.clear();
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
@@ -203,6 +219,13 @@ export class CodeGenerator {
         }
       }
 
+      // Register public constants
+      for (const c of dep.program.globalConsts) {
+        if (c.isPublic) {
+          this.registerConstant(c);
+        }
+      }
+
       // Generate public procedures
       for (const proc of dep.program.procedures) {
         if (proc.isPublic) {
@@ -224,6 +247,11 @@ export class CodeGenerator {
     // Allocate global variables
     for (const global of mainProgram.globals) {
       this.allocateGlobalVariable(global);
+    }
+
+    // Register global constants
+    for (const c of mainProgram.globalConsts) {
+      this.registerConstant(c);
     }
 
     // Generate all procedures (public and private)
@@ -324,6 +352,15 @@ export class CodeGenerator {
     return v;
   }
 
+  private registerConstant(decl: GlobalConstDecl | ConstDecl): void {
+    const c: Constant = {
+      name: decl.name,
+      varType: decl.varType,
+      value: decl.value,
+    };
+    this.constants.set(decl.name, c);
+  }
+
   private generateProcedure(proc: ProcedureNode): void {
     this.currentProc = proc.name;
     this.currentReturnType = null;
@@ -338,6 +375,11 @@ export class CodeGenerator {
     // Allocate local variables
     for (const local of proc.locals) {
       this.allocateVariable(local);
+    }
+
+    // Register local constants
+    for (const c of proc.localConsts) {
+      this.registerConstant(c);
     }
 
     // Generate body
@@ -363,6 +405,11 @@ export class CodeGenerator {
     // Allocate local variables
     for (const local of func.locals) {
       this.allocateVariable(local);
+    }
+
+    // Register local constants
+    for (const c of func.localConsts) {
+      this.registerConstant(c);
     }
 
     // Generate body
@@ -401,6 +448,10 @@ export class CodeGenerator {
     const target = stmt.target;
 
     if (target.kind === "Variable") {
+      // Check if trying to assign to a constant
+      if (this.constants.has(target.name)) {
+        throw new Error(`Cannot assign to constant: ${target.name}`);
+      }
       const v = this.variables.get(target.name);
       if (!v) {
         throw new Error(`Unknown variable: ${target.name}`);
@@ -693,6 +744,12 @@ export class CodeGenerator {
         break;
 
       case "Variable":
+        // Check if it's a constant first
+        const c8 = this.constants.get(expr.name);
+        if (c8) {
+          this.emit(`  lda #${c8.value & 0xff}`);
+          break;
+        }
         const v = this.variables.get(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);
@@ -815,6 +872,15 @@ export class CodeGenerator {
         break;
 
       case "Variable":
+        // Check if it's a constant first
+        const c16 = this.constants.get(expr.name);
+        if (c16) {
+          const cLo = c16.value & 0xff;
+          const cHi = (c16.value >> 8) & 0xff;
+          this.emit(`  lda #${cLo}`);
+          this.emit(`  ldx #${cHi}`);
+          break;
+        }
         const v = this.variables.get(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);

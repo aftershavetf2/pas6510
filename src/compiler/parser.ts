@@ -7,6 +7,8 @@ import {
   FunctionNode,
   VarDecl,
   GlobalVarDecl,
+  ConstDecl,
+  GlobalConstDecl,
   ImportNode,
   StatementNode,
   ExpressionNode,
@@ -80,6 +82,7 @@ export class Parser {
     const nameToken = this.expect(TokenType.IDENTIFIER);
 
     const globals: GlobalVarDecl[] = [];
+    const globalConsts: GlobalConstDecl[] = [];
     const procedures: ProcedureNode[] = [];
     const functions: FunctionNode[] = [];
 
@@ -96,6 +99,8 @@ export class Parser {
         functions.push(this.parseFunction(isPublic));
       } else if (this.match(TokenType.VAR)) {
         globals.push(this.parseGlobalVar(isPublic));
+      } else if (this.match(TokenType.CONST)) {
+        globalConsts.push(this.parseGlobalConst(isPublic));
       } else {
         throw new Error(
           `Unexpected token ${this.peek().type} at line ${this.peek().line}`
@@ -109,6 +114,7 @@ export class Parser {
       org,
       imports,
       globals,
+      globalConsts,
       procedures,
       functions,
     };
@@ -142,6 +148,19 @@ export class Parser {
     return { name, varType, isPublic };
   }
 
+  private parseGlobalConst(isPublic: boolean): GlobalConstDecl {
+    this.expect(TokenType.CONST);
+    const name = this.expect(TokenType.IDENTIFIER).value;
+    this.expect(TokenType.COLON);
+    const varType = this.parseType();
+    this.expect(TokenType.EQUALS);
+    const valueExpr = this.parseExpression();
+    const value = this.evaluateConstExpr(valueExpr);
+    this.expect(TokenType.SEMICOLON);
+
+    return { name, varType, value, isPublic };
+  }
+
   private parseAddress(value: string): number {
     if (value.startsWith("0x") || value.startsWith("0X")) {
       return parseInt(value.slice(2), 16);
@@ -157,12 +176,15 @@ export class Parser {
     const params = this.parseParams();
 
     const locals: VarDecl[] = [];
+    const localConsts: ConstDecl[] = [];
     const body: StatementNode[] = [];
 
-    // Parse var declarations and statements until 'end'
+    // Parse var/const declarations and statements until 'end'
     while (!this.match(TokenType.END)) {
       if (this.match(TokenType.VAR)) {
         locals.push(...this.parseVarDeclarations());
+      } else if (this.match(TokenType.CONST)) {
+        localConsts.push(...this.parseConstDeclarations());
       } else {
         body.push(this.parseStatement());
       }
@@ -176,6 +198,7 @@ export class Parser {
       name: nameToken.value,
       params,
       locals,
+      localConsts,
       body,
       isPublic,
     };
@@ -189,11 +212,14 @@ export class Parser {
     const returnType = this.parseDataType();
 
     const locals: VarDecl[] = [];
+    const localConsts: ConstDecl[] = [];
     const body: StatementNode[] = [];
 
     while (!this.match(TokenType.END)) {
       if (this.match(TokenType.VAR)) {
         locals.push(...this.parseVarDeclarations());
+      } else if (this.match(TokenType.CONST)) {
+        localConsts.push(...this.parseConstDeclarations());
       } else {
         body.push(this.parseStatement());
       }
@@ -208,6 +234,7 @@ export class Parser {
       params,
       returnType,
       locals,
+      localConsts,
       body,
       isPublic,
     };
@@ -242,6 +269,48 @@ export class Parser {
     decls.push({ name, varType });
 
     return decls;
+  }
+
+  private parseConstDeclarations(): ConstDecl[] {
+    this.expect(TokenType.CONST);
+    const decls: ConstDecl[] = [];
+
+    const name = this.expect(TokenType.IDENTIFIER).value;
+    this.expect(TokenType.COLON);
+    const varType = this.parseType();
+    this.expect(TokenType.EQUALS);
+    const valueExpr = this.parseExpression();
+    const value = this.evaluateConstExpr(valueExpr);
+    this.expect(TokenType.SEMICOLON);
+    decls.push({ name, varType, value });
+
+    return decls;
+  }
+
+  private evaluateConstExpr(expr: ExpressionNode): number {
+    switch (expr.kind) {
+      case "NumberLiteral":
+        return expr.value;
+      case "UnaryOp":
+        if (expr.operator === "-") {
+          return -this.evaluateConstExpr(expr.operand);
+        }
+        throw new Error(`Unsupported unary operator in constant: ${expr.operator}`);
+      case "BinaryOp": {
+        const left = this.evaluateConstExpr(expr.left);
+        const right = this.evaluateConstExpr(expr.right);
+        switch (expr.operator) {
+          case "+": return left + right;
+          case "-": return left - right;
+          case "*": return left * right;
+          case "/": return Math.floor(left / right);
+          default:
+            throw new Error(`Unsupported operator in constant: ${expr.operator}`);
+        }
+      }
+      default:
+        throw new Error(`Expected constant value, got ${expr.kind}`);
+    }
   }
 
   private parseType(): VarType {

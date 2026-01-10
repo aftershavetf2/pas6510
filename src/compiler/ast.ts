@@ -31,6 +31,7 @@ export interface ProgramNode extends ASTNode {
   org?: number;  // Optional origin address
   imports: ImportNode[];  // Module imports
   globals: GlobalVarDecl[];  // Global variables
+  globalConsts: GlobalConstDecl[];  // Global constants
   procedures: ProcedureNode[];
   functions: FunctionNode[];
 }
@@ -42,10 +43,25 @@ export interface GlobalVarDecl {
   isPublic: boolean;
 }
 
+// Global constant declaration
+export interface GlobalConstDecl {
+  name: string;
+  varType: VarType;
+  value: number;
+  isPublic: boolean;
+}
+
 // Variable declaration
 export interface VarDecl {
   name: string;
   varType: VarType;
+}
+
+// Constant declaration
+export interface ConstDecl {
+  name: string;
+  varType: VarType;
+  value: number;
 }
 
 // Procedure declaration
@@ -54,6 +70,7 @@ export interface ProcedureNode extends ASTNode {
   name: string;
   params: VarDecl[];
   locals: VarDecl[];
+  localConsts: ConstDecl[];
   body: StatementNode[];
   isPublic: boolean;
 }
@@ -65,6 +82,7 @@ export interface FunctionNode extends ASTNode {
   params: VarDecl[];
   returnType: DataType;
   locals: VarDecl[];
+  localConsts: ConstDecl[];
   body: StatementNode[];
   isPublic: boolean;
 }

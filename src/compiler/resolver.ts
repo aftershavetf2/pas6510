@@ -10,6 +10,7 @@ import {
   ProcedureNode,
   FunctionNode,
   GlobalVarDecl,
+  GlobalConstDecl,
 } from "./ast";
 
 export interface ResolvedModule {
@@ -26,9 +27,9 @@ export interface ResolvedProgram {
 
 export interface SymbolInfo {
   name: string;
-  type: "proc" | "func" | "var";
+  type: "proc" | "func" | "var" | "const";
   sourceModule: string;
-  node: ProcedureNode | FunctionNode | GlobalVarDecl;
+  node: ProcedureNode | FunctionNode | GlobalVarDecl | GlobalConstDecl;
 }
 
 export class ModuleResolver {
@@ -189,6 +190,23 @@ export class ModuleResolver {
           });
         }
       }
+
+      // Add public global constants
+      for (const globalConst of program.globalConsts) {
+        if (globalConst.isPublic) {
+          if (symbols.has(globalConst.name)) {
+            throw new Error(
+              `Duplicate symbol '${globalConst.name}' exported from multiple modules`
+            );
+          }
+          symbols.set(globalConst.name, {
+            name: globalConst.name,
+            type: "const",
+            sourceModule: module.filePath,
+            node: globalConst,
+          });
+        }
+      }
     }
 
     return symbols;
@@ -220,6 +238,9 @@ export class ModuleResolver {
           ) ||
           importedModule.program.globals.some(
             (g) => g.name === symbolName && g.isPublic
+          ) ||
+          importedModule.program.globalConsts.some(
+            (c) => c.name === symbolName && c.isPublic
           );
 
         if (!isExportedFromModule) {
@@ -231,7 +252,8 @@ export class ModuleResolver {
             importedModule.program.functions.some(
               (f) => f.name === symbolName
             ) ||
-            importedModule.program.globals.some((g) => g.name === symbolName);
+            importedModule.program.globals.some((g) => g.name === symbolName) ||
+            importedModule.program.globalConsts.some((c) => c.name === symbolName);
 
           if (existsButNotPublic) {
             throw new Error(
