@@ -57,14 +57,7 @@ _gt_cont_3:
   pla
   sta _var_row_offset
   stx _var_row_offset+1
-  lda _var_y_temp
-  pha
-  lda #1
-  sta _tmp
-  pla
-  sec
-  sbc _tmp
-  sta _var_y_temp
+  dec _var_y_temp
   jmp _while_0
 _endwhile_1:
   lda #0
@@ -130,14 +123,7 @@ _gt_cont_7:
   pla
   sta _var_row_offset
   stx _var_row_offset+1
-  lda _var_y_temp
-  pha
-  lda #1
-  sta _tmp
-  pla
-  sec
-  sbc _tmp
-  sta _var_y_temp
+  dec _var_y_temp
   jmp _while_4
 _endwhile_5:
   lda #0
@@ -216,54 +202,18 @@ _skip_13:
   lda _var_text_color
   ldy #0
   sta (_poke_addr),y
-  lda _var_addr
-  ldx _var_addr+1
-  sta _tmp16
-  stx _tmp16+1
-  lda #1
-  ldx #0
-  clc
-  adc _tmp16
-  pha
-  txa
-  adc _tmp16+1
-  tax
-  pla
-  sta _var_addr
-  stx _var_addr+1
-  lda _var_caddr
-  ldx _var_caddr+1
-  sta _tmp16
-  stx _tmp16+1
-  lda #1
-  ldx #0
-  clc
-  adc _tmp16
-  pha
-  txa
-  adc _tmp16+1
-  tax
-  pla
-  sta _var_caddr
-  stx _var_caddr+1
-  lda _var_col
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_col
+  inc _var_addr
+  bne _inc16_14
+  inc _var_addr+1
+_inc16_14:
+  inc _var_caddr
+  bne _inc16_15
+  inc _var_caddr+1
+_inc16_15:
+  inc _var_col
   jmp _while_11
 _endwhile_12:
-  lda _var_row
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_row
+  inc _var_row
   jmp _while_8
 _endwhile_9:
   lda #0
@@ -284,26 +234,19 @@ gotoxy:
 newline:
   lda #0
   sta _var_cursor_x
-  lda _var_cursor_y
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_cursor_y
+  inc _var_cursor_y
   lda _var_cursor_y
   pha
   lda #25
   sta _tmp
   pla
   cmp _tmp
-  bcs _skip_16
-  jmp _else_14
-_skip_16:
+  bcs _skip_18
+  jmp _else_16
+_skip_18:
   lda #0
   sta _var_cursor_y
-_else_14:
+_else_16:
   rts
 
 ; Procedure: putch
@@ -324,25 +267,18 @@ putch:
   lda _var_text_color
   ldy #0
   sta (_poke_addr),y
-  lda _var_cursor_x
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_cursor_x
+  inc _var_cursor_x
   lda _var_cursor_x
   pha
   lda #40
   sta _tmp
   pla
   cmp _tmp
-  bcs _skip_19
-  jmp _else_17
-_skip_19:
+  bcs _skip_21
+  jmp _else_19
+_skip_21:
   jsr newline
-_else_17:
+_else_19:
   rts
 
 ; Procedure: putc
@@ -355,19 +291,19 @@ putc:
   sta _tmp
   pla
   cmp _tmp
-  bcs _skip_22
-  jmp _else_20
-_skip_22:
+  bcs _skip_24
+  jmp _else_22
+_skip_24:
   lda _var_sc
   pha
   lda #90
   sta _tmp
   pla
   cmp _tmp
-  beq _le_cont_26
-  bcc _le_cont_26
-  jmp _else_23
-_le_cont_26:
+  beq _le_cont_28
+  bcc _le_cont_28
+  jmp _else_25
+_le_cont_28:
   lda _var_sc
   pha
   lda #64
@@ -378,27 +314,27 @@ _le_cont_26:
   sta _var_ch
   jsr putch
   rts
-_else_23:
-_else_20:
+_else_25:
+_else_22:
   lda _var_sc
   pha
   lda #97
   sta _tmp
   pla
   cmp _tmp
-  bcs _skip_29
-  jmp _else_27
-_skip_29:
+  bcs _skip_31
+  jmp _else_29
+_skip_31:
   lda _var_sc
   pha
   lda #122
   sta _tmp
   pla
   cmp _tmp
-  beq _le_cont_33
-  bcc _le_cont_33
-  jmp _else_30
-_le_cont_33:
+  beq _le_cont_35
+  bcc _le_cont_35
+  jmp _else_32
+_le_cont_35:
   lda _var_sc
   pha
   lda #96
@@ -409,8 +345,8 @@ _le_cont_33:
   sta _var_ch
   jsr putch
   rts
-_else_30:
-_else_27:
+_else_32:
+_else_29:
   lda _var_sc
   sta _var_ch
   jsr putch
@@ -426,29 +362,22 @@ setcolor:
 hline:
   lda #0
   sta _var_i
-_while_34:
+_while_36:
   lda _var_i
   pha
   lda _var_len
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_36
-  jmp _endwhile_35
-_skip_36:
+  bcc _skip_38
+  jmp _endwhile_37
+_skip_38:
   lda _var_ch
   sta _var_ch
   jsr putch
-  lda _var_i
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_i
-  jmp _while_34
-_endwhile_35:
+  inc _var_i
+  jmp _while_36
+_endwhile_37:
   rts
 
 ; Procedure: fillrect
@@ -459,16 +388,16 @@ fillrect:
   sta _var_start_y
   lda #0
   sta _var_row
-_while_37:
+_while_39:
   lda _var_row
   pha
   lda _var_h
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_39
-  jmp _endwhile_38
-_skip_39:
+  bcc _skip_41
+  jmp _endwhile_40
+_skip_41:
   lda _var_start_x
   sta _var_cursor_x
   lda _var_start_y
@@ -481,16 +410,16 @@ _skip_39:
   sta _var_cursor_y
   lda #0
   sta _var_col
-_while_40:
+_while_42:
   lda _var_col
   pha
   lda _var_w
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_42
-  jmp _endwhile_41
-_skip_42:
+  bcc _skip_44
+  jmp _endwhile_43
+_skip_44:
   jsr calc_addr
   jsr calc_color_addr
   lda _var_screen_addr
@@ -507,34 +436,13 @@ _skip_42:
   lda _var_text_color
   ldy #0
   sta (_poke_addr),y
-  lda _var_cursor_x
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_cursor_x
-  lda _var_col
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_col
-  jmp _while_40
-_endwhile_41:
-  lda _var_row
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_row
-  jmp _while_37
-_endwhile_38:
+  inc _var_cursor_x
+  inc _var_col
+  jmp _while_42
+_endwhile_43:
+  inc _var_row
+  jmp _while_39
+_endwhile_40:
   rts
 
 ; Procedure: box
@@ -548,35 +456,28 @@ box:
   jsr putch
   lda #2
   sta _var_i
-_while_43:
+_while_45:
   lda _var_i
   pha
   lda _var_w
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_45
-  jmp _endwhile_44
-_skip_45:
+  bcc _skip_47
+  jmp _endwhile_46
+_skip_47:
   lda #64
   sta _var_ch
   jsr putch
-  lda _var_i
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_i
-  jmp _while_43
-_endwhile_44:
+  inc _var_i
+  jmp _while_45
+_endwhile_46:
   lda #110
   sta _var_ch
   jsr putch
   lda #1
   sta _var_i
-_while_46:
+_while_48:
   lda _var_i
   pha
   lda _var_h
@@ -589,9 +490,9 @@ _while_46:
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_48
-  jmp _endwhile_47
-_skip_48:
+  bcc _skip_50
+  jmp _endwhile_49
+_skip_50:
   lda _var_x
   sta _var_cursor_x
   lda _var_y
@@ -622,16 +523,9 @@ _skip_48:
   lda #93
   sta _var_ch
   jsr putch
-  lda _var_i
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_i
-  jmp _while_46
-_endwhile_47:
+  inc _var_i
+  jmp _while_48
+_endwhile_49:
   lda _var_x
   sta _var_cursor_x
   lda _var_y
@@ -653,29 +547,22 @@ _endwhile_47:
   jsr putch
   lda #2
   sta _var_i
-_while_49:
+_while_51:
   lda _var_i
   pha
   lda _var_w
   sta _tmp
   pla
   cmp _tmp
-  bcc _skip_51
-  jmp _endwhile_50
-_skip_51:
+  bcc _skip_53
+  jmp _endwhile_52
+_skip_53:
   lda #64
   sta _var_ch
   jsr putch
-  lda _var_i
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_i
-  jmp _while_49
-_endwhile_50:
+  inc _var_i
+  jmp _while_51
+_endwhile_52:
   lda #125
   sta _var_ch
   jsr putch
@@ -689,32 +576,32 @@ putnum:
   sta _tmp
   pla
   cmp _tmp
-  beq _skip_54
-  jmp _else_52
-_skip_54:
+  beq _skip_56
+  jmp _else_54
+_skip_56:
   lda #48
   sta _var_ch
   jsr putch
   rts
-_else_52:
+_else_54:
   lda #0
   sta _var_count
   lda _var_num
   ldx _var_num+1
   sta _var_temp
   stx _var_temp+1
-_while_55:
+_while_57:
   lda _var_temp
   pha
   lda #0
   sta _tmp
   pla
   cmp _tmp
-  beq _gt_false_57
-  bcs _gt_cont_58
-_gt_false_57:
-  jmp _endwhile_56
-_gt_cont_58:
+  beq _gt_false_59
+  bcs _gt_cont_60
+_gt_false_59:
+  jmp _endwhile_58
+_gt_cont_60:
   lda _var_temp
   pha
   lda _var_temp
@@ -761,43 +648,45 @@ _gt_cont_58:
   ldx #0
   sta _var_temp
   stx _var_temp+1
-  lda _var_count
-  pha
-  lda #1
-  sta _tmp
-  pla
-  clc
-  adc _tmp
-  sta _var_count
-  jmp _while_55
-_endwhile_56:
-_while_59:
+  inc _var_count
+  jmp _while_57
+_endwhile_58:
+_while_61:
   lda _var_count
   pha
   lda #0
   sta _tmp
   pla
   cmp _tmp
-  beq _gt_false_61
-  bcs _gt_cont_62
-_gt_false_61:
-  jmp _endwhile_60
-_gt_cont_62:
-  lda _var_count
-  pha
-  lda #1
-  sta _tmp
-  pla
-  sec
-  sbc _tmp
-  sta _var_count
+  beq _gt_false_63
+  bcs _gt_cont_64
+_gt_false_63:
+  jmp _endwhile_62
+_gt_cont_64:
+  dec _var_count
   lda _var_count
   tay
   lda _var_digits,y
   sta _var_ch
   jsr putch
-  jmp _while_59
-_endwhile_60:
+  jmp _while_61
+_endwhile_62:
+  rts
+
+; Procedure: wait_line
+wait_line:
+_while_65:
+  lda $d012
+  pha
+  lda _var_line
+  sta _tmp
+  pla
+  cmp _tmp
+  bne _skip_67
+  jmp _endwhile_66
+_skip_67:
+  jmp _while_65
+_endwhile_66:
   rts
 
 ; Main module: crt_demo
@@ -1199,4 +1088,6 @@ _var_count:
 _var_temp:
   .byte 0, 0
 _var_digit:
+  .byte 0
+_var_line:
   .byte 0

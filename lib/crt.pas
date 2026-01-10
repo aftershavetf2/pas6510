@@ -38,7 +38,7 @@ pub proc calc_addr()
 
     while y_temp > 0 do
         row_offset := row_offset + 40;
-        y_temp := y_temp - 1;
+        dec(y_temp);
     end;
 
     screen_addr := SCREEN_BASE + row_offset + cursor_x;
@@ -54,7 +54,7 @@ pub proc calc_color_addr()
 
     while y_temp > 0 do
         row_offset := row_offset + 40;
-        y_temp := y_temp - 1;
+        dec(y_temp);
     end;
 
     color_addr := COLOR_BASE + row_offset + cursor_x;
@@ -76,11 +76,11 @@ pub proc clear()
         while col < 40 do
             poke(addr, 32);
             poke(caddr, text_color);
-            addr := addr + 1;
-            caddr := caddr + 1;
-            col := col + 1;
+            inc(addr);
+            inc(caddr);
+            inc(col);
         end;
-        row := row + 1;
+        inc(row);
     end;
 
     cursor_x := 0;
@@ -96,7 +96,7 @@ end;
 { Move cursor to beginning of next line }
 pub proc newline()
     cursor_x := 0;
-    cursor_y := cursor_y + 1;
+    inc(cursor_y);
     if cursor_y >= SCREEN_HEIGHT then
         cursor_y := 0;
     end;
@@ -110,7 +110,7 @@ pub proc putch(ch: u8)
     poke(screen_addr, ch);
     poke(color_addr, text_color);
 
-    cursor_x := cursor_x + 1;
+    inc(cursor_x);
     if cursor_x >= SCREEN_WIDTH then
         newline();
     end;
@@ -152,7 +152,7 @@ pub proc hline(ch: u8, len: u8)
     i := 0;
     while i < len do
         putch(ch);
-        i := i + 1;
+        inc(i);
     end;
 end;
 
@@ -176,10 +176,10 @@ pub proc fillrect(x: u8, y: u8, w: u8, h: u8, ch: u8)
             calc_color_addr();
             poke(screen_addr, ch);
             poke(color_addr, text_color);
-            cursor_x := cursor_x + 1;
-            col := col + 1;
+            inc(cursor_x);
+            inc(col);
         end;
-        row := row + 1;
+        inc(row);
     end;
 end;
 
@@ -196,7 +196,7 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
     i := 2;
     while i < w do
         putch(64);
-        i := i + 1;
+        inc(i);
     end;
     putch(110);
 
@@ -208,7 +208,7 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
         putch(93);
         cursor_x := x + w - 1;
         putch(93);
-        i := i + 1;
+        inc(i);
     end;
 
     { Bottom line }
@@ -218,7 +218,7 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
     i := 2;
     while i < w do
         putch(64);
-        i := i + 1;
+        inc(i);
     end;
     putch(125);
 end;
@@ -242,13 +242,18 @@ pub proc putnum(num: u16)
         digit := temp - (temp / 10) * 10;
         digits[count] := digit + 48;
         temp := temp / 10;
-        count := count + 1;
+        inc(count);
     end;
 
     { Print digits in reverse order }
     while count > 0 do
-        count := count - 1;
+        dec(count);
         putch(digits[count]);
+    end;
+end;
+
+pub proc wait_line(line:u8)
+    while peek($d012) <> line do
     end;
 end;
 
