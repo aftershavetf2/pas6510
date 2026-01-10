@@ -25,27 +25,27 @@ irq_disable:
 main:
   sei
   lda #0
-  sta _var_x
+  sta _var_main_x
 _while_0:
   lda #1
   bne _skip_2
   jmp _endwhile_1
 _skip_2:
   lda #0
-  sta _var_x
+  sta _var_main_x
 _for_3:
   lda #0
-  sta _var_i
+  sta _var_main_i
 _for_5:
-  ldy _var_i
-  lda _var_x
+  ldy _var_main_i
+  lda _var_main_x
   sta $0400,y
-  inc _var_i
-  lda _var_i
+  inc _var_main_i
+  lda _var_main_i
   bne _for_5
 _endfor_6:
-  inc _var_x
-  lda _var_x
+  inc _var_main_x
+  lda _var_main_x
   bne _for_3
 _endfor_4:
   jmp _while_0
@@ -149,7 +149,7 @@ _d10_skip:
   rts
 
 ; Variables
-_var_i:
+_var_main_i:
   .byte 0
-_var_x:
+_var_main_x:
   .byte 0

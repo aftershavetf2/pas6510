@@ -14,14 +14,14 @@ start:
 ; Main module: func_types_test
 ; Procedure: set_global
 set_global:
-  lda _var_x
+  lda _var_set_global_x
   sta _var_global_val
   rts
 
 ; Procedure: set_global16
 set_global16:
-  lda _var_x
-  ldx _var_x+1
+  lda _var_set_global16_x
+  ldx _var_set_global16_x+1
   sta _var_global_val16
   stx _var_global_val16+1
   rts
@@ -71,10 +71,10 @@ newline:
 ; Procedure: test_u8_identity
 test_u8_identity:
   lda #55
-  sta _var_x
+  sta _var_identity_u8_x
   jsr identity_u8
-  sta _var_result
-  lda _var_result
+  sta _var_test_u8_identity_result
+  lda _var_test_u8_identity_result
   pha
   lda #55
   sta _tmp
@@ -93,12 +93,12 @@ _endif_1:
 ; Procedure: test_u8_add
 test_u8_add:
   lda #10
-  sta _var_a
+  sta _var_add_u8_a
   lda #20
-  sta _var_b
+  sta _var_add_u8_b
   jsr add_u8
-  sta _var_result
-  lda _var_result
+  sta _var_test_u8_add_result
+  lda _var_test_u8_add_result
   pha
   lda #30
   sta _tmp
@@ -117,10 +117,10 @@ _endif_4:
 ; Procedure: test_u8_double
 test_u8_double:
   lda #25
-  sta _var_x
+  sta _var_double_u8_x
   jsr double_u8
-  sta _var_result
-  lda _var_result
+  sta _var_test_u8_double_result
+  lda _var_test_u8_double_result
   pha
   lda #50
   sta _tmp
@@ -139,8 +139,8 @@ _endif_7:
 ; Procedure: test_u8_const
 test_u8_const:
   jsr const_u8
-  sta _var_result
-  lda _var_result
+  sta _var_test_u8_const_result
+  lda _var_test_u8_const_result
   pha
   lda #42
   sta _tmp
@@ -159,39 +159,39 @@ _endif_10:
 ; Procedure: test_u16_const
 test_u16_const:
   jsr const_u16
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_test_u16_const_result
+  stx _var_test_u16_const_result+1
+  lda _var_test_u16_const_result
+  ldx _var_test_u16_const_result+1
   jsr write_u16_ln
   rts
 
 ; Procedure: test_u16_big
 test_u16_big:
   jsr big_const
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_test_u16_big_result
+  stx _var_test_u16_big_result+1
+  lda _var_test_u16_big_result
+  ldx _var_test_u16_big_result+1
   jsr write_u16_ln
   rts
 
 ; Procedure: test_u8_to_u16
 test_u8_to_u16:
   lda #200
-  sta _var_x
+  sta _var_u8_to_u16_x
   jsr u8_to_u16
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_test_u8_to_u16_result
+  stx _var_test_u8_to_u16_result+1
+  lda _var_test_u8_to_u16_result
+  ldx _var_test_u8_to_u16_result+1
   jsr write_u16_ln
   rts
 
 ; Procedure: test_procedure
 test_procedure:
   lda #99
-  sta _var_x
+  sta _var_set_global_x
   jsr set_global
   lda _var_global_val
   pha
@@ -270,15 +270,15 @@ main:
 
 ; Function: identity_u8
 identity_u8:
-  lda _var_x
+  lda _var_identity_u8_x
   rts
   rts
 
 ; Function: add_u8
 add_u8:
-  lda _var_a
+  lda _var_add_u8_a
   pha
-  lda _var_b
+  lda _var_add_u8_b
   sta _tmp
   pla
   clc
@@ -288,15 +288,15 @@ add_u8:
 
 ; Function: double_u8
 double_u8:
-  lda _var_x
+  lda _var_double_u8_x
   pha
-  lda _var_x
+  lda _var_double_u8_x
   sta _tmp
   pla
   clc
   adc _tmp
-  sta _var_temp
-  lda _var_temp
+  sta _var_double_u8_temp
+  lda _var_double_u8_temp
   rts
   rts
 
@@ -308,19 +308,19 @@ const_u8:
 
 ; Function: identity_u16
 identity_u16:
-  lda _var_x
-  ldx _var_x+1
+  lda _var_identity_u16_x
+  ldx _var_identity_u16_x+1
   rts
   rts
 
 ; Function: add_u16
 add_u16:
-  lda _var_a
-  ldx _var_a+1
+  lda _var_add_u16_a
+  ldx _var_add_u16_a+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_b
-  ldx _var_b+1
+  lda _var_add_u16_b
+  ldx _var_add_u16_b+1
   clc
   adc _tmp16
   pha
@@ -347,22 +347,22 @@ big_const:
 
 ; Function: u8_to_u16
 u8_to_u16:
-  lda _var_x
+  lda _var_u8_to_u16_x
   ldx #0
   rts
   rts
 
 ; Function: sum_to_u16
 sum_to_u16:
-  lda _var_a
+  lda _var_sum_to_u16_a
   ldx #0
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_sum_to_u16_result
+  stx _var_sum_to_u16_result+1
+  lda _var_sum_to_u16_result
+  ldx _var_sum_to_u16_result+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_b
+  lda _var_sum_to_u16_b
   ldx #0
   clc
   adc _tmp16
@@ -371,10 +371,10 @@ sum_to_u16:
   adc _tmp16+1
   tax
   pla
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_sum_to_u16_result
+  stx _var_sum_to_u16_result+1
+  lda _var_sum_to_u16_result
+  ldx _var_sum_to_u16_result+1
   rts
   rts
 
@@ -479,13 +479,45 @@ _var_global_val:
   .byte 0
 _var_global_val16:
   .byte 0, 0
-_var_x:
+_var_set_global_x:
   .byte 0
-_var_result:
+_var_set_global16_x:
   .byte 0, 0
-_var_a:
+_var_test_u8_identity_result:
   .byte 0
-_var_b:
+_var_test_u8_add_result:
   .byte 0
-_var_temp:
+_var_test_u8_double_result:
   .byte 0
+_var_test_u8_const_result:
+  .byte 0
+_var_test_u16_const_result:
+  .byte 0, 0
+_var_test_u16_big_result:
+  .byte 0, 0
+_var_test_u8_to_u16_result:
+  .byte 0, 0
+_var_identity_u8_x:
+  .byte 0
+_var_add_u8_a:
+  .byte 0
+_var_add_u8_b:
+  .byte 0
+_var_double_u8_x:
+  .byte 0
+_var_double_u8_temp:
+  .byte 0
+_var_identity_u16_x:
+  .byte 0, 0
+_var_add_u16_a:
+  .byte 0, 0
+_var_add_u16_b:
+  .byte 0, 0
+_var_u8_to_u16_x:
+  .byte 0
+_var_sum_to_u16_a:
+  .byte 0
+_var_sum_to_u16_b:
+  .byte 0
+_var_sum_to_u16_result:
+  .byte 0, 0

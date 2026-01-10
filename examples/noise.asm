@@ -25,15 +25,15 @@ irq_disable:
 main:
   sei
   lda #0
-  sta _var_x
+  sta _var_main_x
 _while_0:
   lda #1
   bne _skip_2
   jmp _endwhile_1
 _skip_2:
-  lda _var_x
+  lda _var_main_x
   sta $d418
-  inc _var_x
+  inc _var_main_x
   jmp _while_0
 _endwhile_1:
   rts
@@ -135,5 +135,5 @@ _d10_skip:
   rts
 
 ; Variables
-_var_x:
+_var_main_x:
   .byte 0

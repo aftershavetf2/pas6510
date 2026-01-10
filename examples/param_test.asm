@@ -14,14 +14,14 @@ start:
 ; Main module: param_test
 ; Procedure: store_u8
 store_u8:
-  lda _var_x
+  lda _var_store_u8_x
   sta _var_last_value
   rts
 
 ; Procedure: store_u16
 store_u16:
-  lda _var_x
-  ldx _var_x+1
+  lda _var_store_u16_x
+  ldx _var_store_u16_x+1
   sta _var_last_value16
   stx _var_last_value16+1
   rts
@@ -29,65 +29,65 @@ store_u16:
 ; Procedure: main
 main:
   lda #41
-  sta _var_x
+  sta _var_inc_u8_x
   jsr inc_u8
-  sta _var_r8
-  lda _var_r8
+  sta _var_main_r8
+  lda _var_main_r8
   ldx #0
   jsr write_u16_ln
   lda #10
-  sta _var_a
+  sta _var_add_u8_a
   lda #32
-  sta _var_b
+  sta _var_add_u8_b
   jsr add_u8
-  sta _var_r8
-  lda _var_r8
+  sta _var_main_r8
+  lda _var_main_r8
   ldx #0
   jsr write_u16_ln
   lda #231
   ldx #3
-  sta _var_x
-  stx _var_x+1
+  sta _var_inc_u16_x
+  stx _var_inc_u16_x+1
   jsr inc_u16
-  sta _var_r16
-  stx _var_r16+1
-  lda _var_r16
-  ldx _var_r16+1
+  sta _var_main_r16
+  stx _var_main_r16+1
+  lda _var_main_r16
+  ldx _var_main_r16+1
   jsr write_u16_ln
   lda #48
   ldx #117
-  sta _var_a
-  stx _var_a+1
+  sta _var_add_u16_a
+  stx _var_add_u16_a+1
   lda #16
   ldx #39
-  sta _var_b
-  stx _var_b+1
+  sta _var_add_u16_b
+  stx _var_add_u16_b+1
   jsr add_u16
-  sta _var_r16
-  stx _var_r16+1
-  lda _var_r16
-  ldx _var_r16+1
+  sta _var_main_r16
+  stx _var_main_r16+1
+  lda _var_main_r16
+  ldx _var_main_r16+1
   jsr write_u16_ln
   lda #200
-  sta _var_a
+  sta _var_mul_u8_to_u16_a
   lda #200
-  sta _var_b
+  sta _var_mul_u8_to_u16_b
   jsr mul_u8_to_u16
-  sta _var_r16
-  stx _var_r16+1
-  lda _var_r16
-  ldx _var_r16+1
+  sta _var_main_r16
+  stx _var_main_r16+1
+  lda _var_main_r16
+  ldx _var_main_r16+1
   jsr write_u16_ln
   lda #77
-  sta _var_x
+  sta _var_store_u8_x
   jsr store_u8
   lda _var_last_value
   ldx #0
   jsr write_u16_ln
   lda #57
   ldx #48
-  sta _var_x
-  stx _var_x+1
+  sta _var_store_u16_x
+  stx _var_store_u16_x+1
   jsr store_u16
   lda _var_last_value16
   ldx _var_last_value16+1
@@ -96,7 +96,7 @@ main:
 
 ; Function: inc_u8
 inc_u8:
-  lda _var_x
+  lda _var_inc_u8_x
   pha
   lda #1
   sta _tmp
@@ -108,9 +108,9 @@ inc_u8:
 
 ; Function: add_u8
 add_u8:
-  lda _var_a
+  lda _var_add_u8_a
   pha
-  lda _var_b
+  lda _var_add_u8_b
   sta _tmp
   pla
   clc
@@ -120,8 +120,8 @@ add_u8:
 
 ; Function: inc_u16
 inc_u16:
-  lda _var_x
-  ldx _var_x+1
+  lda _var_inc_u16_x
+  ldx _var_inc_u16_x+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -138,12 +138,12 @@ inc_u16:
 
 ; Function: add_u16
 add_u16:
-  lda _var_a
-  ldx _var_a+1
+  lda _var_add_u16_a
+  ldx _var_add_u16_a+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_b
-  ldx _var_b+1
+  lda _var_add_u16_b
+  ldx _var_add_u16_b+1
   clc
   adc _tmp16
   pha
@@ -156,13 +156,13 @@ add_u16:
 
 ; Function: mul_u8_to_u16
 mul_u8_to_u16:
-  lda _var_a
+  lda _var_mul_u8_to_u16_a
   ldx #0
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
+  sta _var_mul_u8_to_u16_result
+  stx _var_mul_u8_to_u16_result+1
+  lda _var_mul_u8_to_u16_result
   pha
-  lda _var_b
+  lda _var_mul_u8_to_u16_b
   sta _tmp
   pla
   sta _mul_a
@@ -170,10 +170,10 @@ mul_u8_to_u16:
   sta _mul_b
   jsr _multiply
   ldx #0
-  sta _var_result
-  stx _var_result+1
-  lda _var_result
-  ldx _var_result+1
+  sta _var_mul_u8_to_u16_result
+  stx _var_mul_u8_to_u16_result+1
+  lda _var_mul_u8_to_u16_result
+  ldx _var_mul_u8_to_u16_result+1
   rts
   rts
 
@@ -278,15 +278,29 @@ _var_last_value:
   .byte 0
 _var_last_value16:
   .byte 0, 0
-_var_x:
+_var_store_u8_x:
+  .byte 0
+_var_store_u16_x:
   .byte 0, 0
-_var_r8:
+_var_main_r8:
   .byte 0
-_var_r16:
+_var_main_r16:
   .byte 0, 0
-_var_a:
+_var_inc_u8_x:
   .byte 0
-_var_b:
+_var_add_u8_a:
   .byte 0
-_var_result:
+_var_add_u8_b:
+  .byte 0
+_var_inc_u16_x:
+  .byte 0, 0
+_var_add_u16_a:
+  .byte 0, 0
+_var_add_u16_b:
+  .byte 0, 0
+_var_mul_u8_to_u16_a:
+  .byte 0
+_var_mul_u8_to_u16_b:
+  .byte 0
+_var_mul_u8_to_u16_result:
   .byte 0, 0

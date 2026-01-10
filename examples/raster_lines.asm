@@ -30,8 +30,8 @@ _while_0:
   jmp _endwhile_1
 _skip_2:
   lda $d012
-  sta _var_line
-  lda _var_line
+  sta _var_main_line
+  lda _var_main_line
   sta $d020
   jmp _while_0
 _endwhile_1:
@@ -134,5 +134,5 @@ _d10_skip:
   rts
 
 ; Variables
-_var_line:
+_var_main_line:
   .byte 0

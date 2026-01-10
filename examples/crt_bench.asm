@@ -1,4 +1,4 @@
-; pas6510 compiled program: crt_demo
+; pas6510 compiled program: crt_bench
 ;
 
   .org $0801
@@ -703,253 +703,41 @@ _skip_71:
 _endwhile_70:
   rts
 
-; Main module: crt_demo
-; Procedure: print_hello
-print_hello:
-  lda #72
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #76
-  sta _var_putc_ch
-  jsr putc
-  lda #76
-  sta _var_putc_ch
-  jsr putc
-  lda #79
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  lda #87
-  sta _var_putc_ch
-  jsr putc
-  lda #79
-  sta _var_putc_ch
-  jsr putc
-  lda #82
-  sta _var_putc_ch
-  jsr putc
-  lda #76
-  sta _var_putc_ch
-  jsr putc
-  lda #68
-  sta _var_putc_ch
-  jsr putc
+; Module: sys
+; Procedure: irq_enable
+irq_enable:
   rts
 
-; Procedure: print_pas6510
-print_pas6510:
-  lda #80
-  sta _var_putc_ch
-  jsr putc
-  lda #65
-  sta _var_putc_ch
-  jsr putc
-  lda #83
-  sta _var_putc_ch
-  jsr putc
-  lda #54
-  sta _var_putc_ch
-  jsr putc
-  lda #53
-  sta _var_putc_ch
-  jsr putc
-  lda #49
-  sta _var_putc_ch
-  jsr putc
-  lda #48
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  lda #67
-  sta _var_putc_ch
-  jsr putc
-  lda #82
-  sta _var_putc_ch
-  jsr putc
-  lda #84
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  lda #68
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #77
-  sta _var_putc_ch
-  jsr putc
-  lda #79
-  sta _var_putc_ch
-  jsr putc
+; Procedure: irq_disable
+irq_disable:
   rts
 
-; Procedure: print_number_label
-print_number_label:
-  lda #78
-  sta _var_putc_ch
-  jsr putc
-  lda #85
-  sta _var_putc_ch
-  jsr putc
-  lda #77
-  sta _var_putc_ch
-  jsr putc
-  lda #66
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #82
-  sta _var_putc_ch
-  jsr putc
-  lda #58
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  rts
-
-; Procedure: print_red
-print_red:
-  lda #82
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #68
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  rts
-
-; Procedure: print_green
-print_green:
-  lda #71
-  sta _var_putc_ch
-  jsr putc
-  lda #82
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  lda #78
-  sta _var_putc_ch
-  jsr putc
-  lda #32
-  sta _var_putc_ch
-  jsr putc
-  rts
-
-; Procedure: print_blue
-print_blue:
-  lda #66
-  sta _var_putc_ch
-  jsr putc
-  lda #76
-  sta _var_putc_ch
-  jsr putc
-  lda #85
-  sta _var_putc_ch
-  jsr putc
-  lda #69
-  sta _var_putc_ch
-  jsr putc
-  rts
-
+; Main module: crt_bench
 ; Procedure: main
 main:
-  jsr crt_init
-  jsr clear
-  lda #3
-  sta _var_setcolor_c
-  jsr setcolor
-  lda #5
-  sta _var_box_x
-  lda #2
-  sta _var_box_y
-  lda #30
-  sta _var_box_w
-  lda #10
-  sta _var_box_h
-  jsr box
-  lda #1
-  sta _var_setcolor_c
-  jsr setcolor
-  lda #14
-  sta _var_gotoxy_x
-  lda #4
-  sta _var_gotoxy_y
-  jsr gotoxy
-  jsr print_hello
-  lda #7
-  sta _var_setcolor_c
-  jsr setcolor
-  lda #8
-  sta _var_gotoxy_x
-  lda #6
-  sta _var_gotoxy_y
-  jsr gotoxy
-  jsr print_number_label
-  lda #57
-  ldx #48
-  sta _var_putnum_num
-  stx _var_putnum_num+1
-  jsr putnum
-  lda #8
-  sta _var_gotoxy_x
-  lda #8
-  sta _var_gotoxy_y
-  jsr gotoxy
-  lda #2
-  sta _var_setcolor_c
-  jsr setcolor
-  jsr print_red
-  lda #5
-  sta _var_setcolor_c
-  jsr setcolor
-  jsr print_green
-  lda #6
-  sta _var_setcolor_c
-  jsr setcolor
-  jsr print_blue
-  lda #14
-  sta _var_setcolor_c
-  jsr setcolor
+  sei
   lda #0
-  sta _var_gotoxy_x
-  lda #20
-  sta _var_gotoxy_y
-  jsr gotoxy
-  lda #64
-  sta _var_hline_ch
-  lda #40
-  sta _var_hline_len
-  jsr hline
-  lda #12
-  sta _var_gotoxy_x
-  lda #22
-  sta _var_gotoxy_y
-  jsr gotoxy
-  jsr print_pas6510
+  sta $d011
+  lda #0
+  sta _var_main_line
+_while_72:
+  lda #1
+  bne _skip_74
+  jmp _endwhile_73
+_skip_74:
+  lda #0
+  sta $d020
+  lda _var_main_line
+  sta _var_wait_line_line
+  jsr wait_line
+  lda #1
+  sta $d020
+  inc _var_main_line
+  lda _var_main_line
+  sta _var_wait_line_line
+  jsr wait_line
+  jmp _while_72
+_endwhile_73:
   rts
 
 
@@ -1132,4 +920,6 @@ _var_putnum_temp:
 _var_putnum_digit:
   .byte 0
 _var_wait_line_line:
+  .byte 0
+_var_main_line:
   .byte 0
