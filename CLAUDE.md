@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-pas6510 is an optimizing Pascal-ish compiler for the 6510 CPU. It runs on a PC and compiles to 6510 assembly, then uses cc65 suite (ca65/ld65) to produce C64 PRG files.
+pas6510 is an Pascal-ish compiler for the 6510 CPU. It runs on a PC and compiles to 6510 assembly, then uses cc65 suite (ca65/ld65) to produce C64 PRG files.
 
 ## CLI Usage
 
