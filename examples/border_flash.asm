@@ -77,16 +77,6 @@ _endwhile_8:
 
 
 ; Variables
-_var_cursor_x:
-  .byte 0
-_var_cursor_y:
-  .byte 0
-_var_text_color:
-  .byte 0
-_var_screen_addr:
-  .byte 0, 0
-_var_color_addr:
-  .byte 0, 0
 _var_wait_line_line:
   .byte 0
 _var_main_y:

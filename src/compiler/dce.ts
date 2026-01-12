@@ -73,6 +73,89 @@ function collectCallsFromExpression(expr: ExpressionNode, calls: Set<string>): v
   }
 }
 
+// Collect all variable references from a list of statements
+function collectVarsFromStatements(statements: StatementNode[], vars: Set<string>): void {
+  for (const stmt of statements) {
+    switch (stmt.kind) {
+      case "Call":
+        for (const arg of stmt.args) {
+          collectVarsFromExpression(arg, vars);
+        }
+        break;
+      case "Assignment":
+        // Target variable
+        if (stmt.target.kind === "Variable") {
+          vars.add(stmt.target.name);
+        } else if (stmt.target.kind === "ArrayAccess") {
+          vars.add(stmt.target.array);
+          collectVarsFromExpression(stmt.target.index, vars);
+        }
+        collectVarsFromExpression(stmt.value, vars);
+        break;
+      case "ForLoop":
+        vars.add(stmt.variable);
+        collectVarsFromExpression(stmt.start, vars);
+        collectVarsFromExpression(stmt.end, vars);
+        collectVarsFromStatements(stmt.body, vars);
+        break;
+      case "WhileLoop":
+        collectVarsFromExpression(stmt.condition, vars);
+        collectVarsFromStatements(stmt.body, vars);
+        break;
+      case "If":
+        collectVarsFromExpression(stmt.condition, vars);
+        collectVarsFromStatements(stmt.thenBranch, vars);
+        collectVarsFromStatements(stmt.elseBranch, vars);
+        break;
+      case "Return":
+        if (stmt.value) {
+          collectVarsFromExpression(stmt.value, vars);
+        }
+        break;
+    }
+  }
+}
+
+// Collect all variable references from an expression
+function collectVarsFromExpression(expr: ExpressionNode, vars: Set<string>): void {
+  switch (expr.kind) {
+    case "Variable":
+      vars.add(expr.name);
+      break;
+    case "ArrayAccess":
+      vars.add(expr.array);
+      collectVarsFromExpression(expr.index, vars);
+      break;
+    case "CallExpr":
+      for (const arg of expr.args) {
+        collectVarsFromExpression(arg, vars);
+      }
+      break;
+    case "BinaryOp":
+      collectVarsFromExpression(expr.left, vars);
+      collectVarsFromExpression(expr.right, vars);
+      break;
+    case "UnaryOp":
+      collectVarsFromExpression(expr.operand, vars);
+      break;
+    // NumberLiteral, StringLiteral don't contain variable references
+  }
+}
+
+// Get all variables referenced by a procedure
+function getVarsFromProcedure(proc: ProcedureNode): Set<string> {
+  const vars = new Set<string>();
+  collectVarsFromStatements(proc.body, vars);
+  return vars;
+}
+
+// Get all variables referenced by a function
+function getVarsFromFunction(func: FunctionNode): Set<string> {
+  const vars = new Set<string>();
+  collectVarsFromStatements(func.body, vars);
+  return vars;
+}
+
 // Get all calls made by a procedure
 function getCallsFromProcedure(proc: ProcedureNode): Set<string> {
   const calls = new Set<string>();
@@ -151,4 +234,78 @@ export function findReachable(callGraph: Map<string, Set<string>>): Set<string> 
 export function computeReachableSet(resolved: ResolvedProgram): Set<string> {
   const callGraph = buildCallGraph(resolved);
   return findReachable(callGraph);
+}
+
+// Compute the set of variables used by reachable procedures/functions
+export function computeUsedVariables(resolved: ResolvedProgram, reachable: Set<string>): Set<string> {
+  const usedVars = new Set<string>();
+
+  // Process main module
+  const mainProgram = resolved.mainModule.program;
+  for (const proc of mainProgram.procedures) {
+    if (reachable.has(proc.name)) {
+      const vars = getVarsFromProcedure(proc);
+      for (const v of vars) {
+        usedVars.add(v);
+      }
+      // Also add parameter names (they become variables)
+      for (const param of proc.params) {
+        usedVars.add(param.name);
+      }
+      // Also add local variable names
+      for (const local of proc.locals) {
+        usedVars.add(local.name);
+      }
+    }
+  }
+  for (const func of mainProgram.functions) {
+    if (reachable.has(func.name)) {
+      const vars = getVarsFromFunction(func);
+      for (const v of vars) {
+        usedVars.add(v);
+      }
+      for (const param of func.params) {
+        usedVars.add(param.name);
+      }
+      for (const local of func.locals) {
+        usedVars.add(local.name);
+      }
+    }
+  }
+
+  // Process dependencies
+  for (const dep of resolved.dependencies) {
+    if (dep.filePath === resolved.mainModule.filePath) continue;
+
+    for (const proc of dep.program.procedures) {
+      if (proc.isPublic && reachable.has(proc.name)) {
+        const vars = getVarsFromProcedure(proc);
+        for (const v of vars) {
+          usedVars.add(v);
+        }
+        for (const param of proc.params) {
+          usedVars.add(param.name);
+        }
+        for (const local of proc.locals) {
+          usedVars.add(local.name);
+        }
+      }
+    }
+    for (const func of dep.program.functions) {
+      if (func.isPublic && reachable.has(func.name)) {
+        const vars = getVarsFromFunction(func);
+        for (const v of vars) {
+          usedVars.add(v);
+        }
+        for (const param of func.params) {
+          usedVars.add(param.name);
+        }
+        for (const local of func.locals) {
+          usedVars.add(local.name);
+        }
+      }
+    }
+  }
+
+  return usedVars;
 }

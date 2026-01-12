@@ -17,7 +17,7 @@ import {
 } from "./ast";
 import { ResolvedProgram, ResolvedModule } from "./resolver";
 import { peepholeOptimize } from "./peephole";
-import { computeReachableSet } from "./dce";
+import { computeReachableSet, computeUsedVariables } from "./dce";
 
 interface Variable {
   name: string;
@@ -177,6 +177,7 @@ export class CodeGenerator {
 
     // Compute reachable set for dead code elimination
     const reachable = computeReachableSet(resolved);
+    const usedVars = computeUsedVariables(resolved, reachable);
 
     // Build function signature table from all modules
     for (const dep of resolved.dependencies) {
@@ -247,16 +248,16 @@ export class CodeGenerator {
 
       this.emit(`; Module: ${dep.program.name}`);
 
-      // Allocate public global variables
+      // Allocate public global variables (only if used)
       for (const global of dep.program.globals) {
-        if (global.isPublic) {
+        if (global.isPublic && usedVars.has(global.name)) {
           this.allocateGlobalVariable(global);
         }
       }
 
-      // Register public constants
+      // Register public constants (only if used)
       for (const c of dep.program.globalConsts) {
-        if (c.isPublic) {
+        if (c.isPublic && usedVars.has(c.name)) {
           this.registerConstant(c);
         }
       }
