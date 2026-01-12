@@ -939,14 +939,43 @@ export class CodeGenerator {
       const loopLabel = this.newLabel("memset_loop");
       const fullLoopLabel = this.newLabel("memset_full_loop");
 
-      // Load value into A
-      this.generateExpr8(stmt.args[2]);
-      this.emit(`  pha`);  // Save value
+      // Optimize argument loading based on simplicity
+      const lenConst = this.getConstantValue(stmt.args[1]);
+      const valConst = this.getConstantValue(stmt.args[2]);
 
-      // Load length into Y
-      this.generateExpr8(stmt.args[1]);
-      this.emit(`  tay`);
-      this.emit(`  pla`);  // Restore value to A
+      if (lenConst !== null) {
+        // Case 1: Length is constant - load value first, then ldy #const
+        this.generateExpr8(stmt.args[2]);
+        this.emit(`  ldy #${lenConst}`);
+      } else if (valConst !== null) {
+        // Case 2: Value is constant - load length into Y, then lda #const
+        this.generateExpr8(stmt.args[1]);
+        this.emit(`  tay`);
+        this.emit(`  lda #${valConst}`);
+      } else if (this.isSimpleExpr(stmt.args[2])) {
+        // Case 3: Value is simple variable - load length, then lda var
+        this.generateExpr8(stmt.args[1]);
+        this.emit(`  tay`);
+        const valExpr = stmt.args[2];
+        if (valExpr.kind === "Variable") {
+          const c = this.constants.get(valExpr.name);
+          if (c) {
+            this.emit(`  lda #${c.value & 0xff}`);
+          } else {
+            this.emit(`  lda ${this.varLabel(valExpr.name)}`);
+          }
+        } else if (valExpr.kind === "CallExpr" && valExpr.name === "peek") {
+          const addr = this.getConstantValue(valExpr.args[0])!;
+          this.emit(`  lda ${this.formatAddr(addr)}`);
+        }
+      } else {
+        // Case 4: Both are complex - use PHA/PLA (original code)
+        this.generateExpr8(stmt.args[2]);
+        this.emit(`  pha`);
+        this.generateExpr8(stmt.args[1]);
+        this.emit(`  tay`);
+        this.emit(`  pla`);
+      }
 
       if (addrConst !== null) {
         // Constant address - use absolute indexed

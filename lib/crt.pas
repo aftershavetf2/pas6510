@@ -75,14 +75,16 @@ pub proc clear()
     const caddr3 : u16 = COLOR_BASE + 512;
     const caddr4 : u16 = COLOR_BASE + 768;
 
-    memset(addr1, 0, 32);
-    memset(caddr1, 0, text_color);
-    memset(addr2, 0, 32);
-    memset(caddr2, 0, text_color);
-    memset(addr3, 0, 32);
-    memset(caddr3, 0, text_color);
-    memset(addr4, 231, 32);
-    memset(caddr4, 231, text_color);
+    for i = 0 to 255 do
+        poke(addr1+i, 32);
+        poke(addr2+i, 32);
+        poke(addr3+i, 32);
+        poke(addr4+i, 32);
+        poke(caddr1+i, text_color);
+        poke(caddr2+i, text_color);
+        poke(caddr3+i, text_color);
+        poke(caddr4+i, text_color);
+    end;
 
     cursor_x := 0;
     cursor_y := 0;
