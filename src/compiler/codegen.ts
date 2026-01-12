@@ -37,6 +37,16 @@ interface FunctionSignature {
   returnType: DataType | null;  // null for procedures
 }
 
+// Track which runtime routines are needed
+interface RuntimeNeeds {
+  tmp: boolean;        // _tmp temporary storage
+  tmp16: boolean;      // _tmp16 temporary storage
+  pokeAddr: boolean;   // _poke_addr for indirect addressing
+  multiply: boolean;   // _multiply routine
+  divide: boolean;     // _divide routine
+  writeU16Ln: boolean; // write_u16_ln routine (includes _div16_10)
+}
+
 export class CodeGenerator {
   private output: string[] = [];
   private variables: Map<string, Variable> = new Map();
@@ -47,6 +57,18 @@ export class CodeGenerator {
   private labelCounter: number = 0;
   private currentProc: string = "";
   private currentReturnType: DataType | null = null;
+  private runtime: RuntimeNeeds = this.resetRuntimeNeeds();
+
+  private resetRuntimeNeeds(): RuntimeNeeds {
+    return {
+      tmp: false,
+      tmp16: false,
+      pokeAddr: false,
+      multiply: false,
+      divide: false,
+      writeU16Ln: false,
+    };
+  }
 
   generate(program: ProgramNode): string {
     this.output = [];
@@ -56,6 +78,7 @@ export class CodeGenerator {
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
     this.labelCounter = 0;
+    this.runtime = this.resetRuntimeNeeds();
 
     // Build function signature table
     for (const proc of program.procedures) {
@@ -147,6 +170,7 @@ export class CodeGenerator {
     this.nextZpAddress = 0x02;
     this.nextRamAddress = 0x0800;
     this.labelCounter = 0;
+    this.runtime = this.resetRuntimeNeeds();
 
     const mainProgram = resolved.mainModule.program;
 
@@ -728,6 +752,7 @@ export class CodeGenerator {
         this.generateCmpSimple(expr.right);
       } else {
         // Fallback: use stack and _tmp
+        this.runtime.tmp = true;
         this.emit(`  pha`); // Save on stack
         this.generateExpr8(expr.right);
         this.emit(`  sta _tmp`);
@@ -795,6 +820,7 @@ export class CodeGenerator {
     // Handle built-in functions with arguments
     if (stmt.name === "write_u16_ln") {
       // Pass 16-bit argument in A (low) and X (high)
+      this.runtime.writeU16Ln = true;
       this.generateExpr16(stmt.args[0]);
       this.emit(`  jsr ${stmt.name}`);
       return;
@@ -820,6 +846,7 @@ export class CodeGenerator {
           this.emit(`  sta ${this.formatAddr(indexed.base)},y`);
         } else {
           // Variable address - use indirect addressing
+          this.runtime.pokeAddr = true;
           this.generateExpr16(stmt.args[0]);
           this.emit(`  sta _poke_addr`);
           this.emit(`  stx _poke_addr+1`);
@@ -935,6 +962,8 @@ export class CodeGenerator {
         this.emit(`${doneLabel}:`);
       } else {
         // Variable address - use indirect indexed
+        this.runtime.pokeAddr = true;
+        this.runtime.tmp = true;
         this.emit(`  pha`);  // Save value
         this.emit(`  sty _tmp`);  // Save length
         this.generateExpr16(stmt.args[0]);
@@ -1058,6 +1087,7 @@ export class CodeGenerator {
               this.emit(`  lda ${this.formatAddr(indexed.base)},y`);
             } else {
               // Variable address - use indirect addressing
+              this.runtime.pokeAddr = true;
               this.generateExpr16(expr.args[0]);
               this.emit(`  sta _poke_addr`);
               this.emit(`  stx _poke_addr+1`);
@@ -1097,6 +1127,9 @@ export class CodeGenerator {
     left: ExpressionNode;
     right: ExpressionNode;
   }): void {
+    // Mark _tmp as needed for binary operations
+    this.runtime.tmp = true;
+
     // Generate left into A, save to stack
     this.generateExpr8(expr.left);
     this.emit(`  pha`);
@@ -1119,6 +1152,7 @@ export class CodeGenerator {
         break;
       case "*":
         // Call multiply routine
+        this.runtime.multiply = true;
         this.emit(`  sta _mul_a`);
         this.emit(`  lda _tmp`);
         this.emit(`  sta _mul_b`);
@@ -1126,6 +1160,7 @@ export class CodeGenerator {
         break;
       case "/":
         // Call divide routine
+        this.runtime.divide = true;
         this.emit(`  sta _div_a`);
         this.emit(`  lda _tmp`);
         this.emit(`  sta _div_b`);
@@ -1226,6 +1261,7 @@ export class CodeGenerator {
     switch (expr.operator) {
       case "+":
         // 16-bit addition
+        this.runtime.tmp16 = true;
         this.generateExpr16(expr.left);
         this.emit(`  sta _tmp16`);
         this.emit(`  stx _tmp16+1`);
@@ -1243,6 +1279,8 @@ export class CodeGenerator {
 
       case "-":
         // 16-bit subtraction
+        this.runtime.tmp16 = true;
+        this.runtime.tmp = true;
         this.generateExpr16(expr.left);
         this.emit(`  sta _tmp16`);
         this.emit(`  stx _tmp16+1`);
@@ -1270,112 +1308,136 @@ export class CodeGenerator {
   }
 
   private generateRuntime(): void {
+    // Check if any runtime is needed
+    const needsRuntime = this.runtime.tmp || this.runtime.tmp16 ||
+                         this.runtime.pokeAddr || this.runtime.multiply ||
+                         this.runtime.divide || this.runtime.writeU16Ln;
+
+    if (!needsRuntime) {
+      return;
+    }
+
     this.emit("");
     this.emit("; Runtime library");
     this.emit("");
 
-    // Temporary storage
-    this.emit("_tmp: .byte 0, 0");
-    this.emit("_tmp16: .byte 0, 0");
-    this.emit("");
+    // Temporary storage - only emit what's needed
+    if (this.runtime.tmp || this.runtime.divide) {
+      // divide uses _tmp, so include it if divide is used
+      this.emit("_tmp: .byte 0, 0");
+    }
+    if (this.runtime.tmp16) {
+      this.emit("_tmp16: .byte 0, 0");
+    }
+    if (this.runtime.tmp || this.runtime.tmp16 || this.runtime.divide) {
+      this.emit("");
+    }
 
-    // Zero page pointer for poke/peek (must be in ZP for indirect addressing)
-    this.emit("_poke_addr = $fb  ; ZP location for indirect addressing");
-    this.emit("");
+    // Zero page pointer for poke/peek
+    if (this.runtime.pokeAddr) {
+      this.emit("_poke_addr = $fb  ; ZP location for indirect addressing");
+      this.emit("");
+    }
 
-    // 8-bit multiply (result in A)
-    this.emit("_mul_a: .byte 0");
-    this.emit("_mul_b: .byte 0");
-    this.emit("_multiply:");
-    this.emit("  lda #0");
-    this.emit("  ldx #8");
-    this.emit("_mul_loop:");
-    this.emit("  lsr _mul_b");
-    this.emit("  bcc _mul_skip");
-    this.emit("  clc");
-    this.emit("  adc _mul_a");
-    this.emit("_mul_skip:");
-    this.emit("  asl _mul_a");
-    this.emit("  dex");
-    this.emit("  bne _mul_loop");
-    this.emit("  rts");
-    this.emit("");
+    // 8-bit multiply
+    if (this.runtime.multiply) {
+      this.emit("_mul_a: .byte 0");
+      this.emit("_mul_b: .byte 0");
+      this.emit("_multiply:");
+      this.emit("  lda #0");
+      this.emit("  ldx #8");
+      this.emit("_mul_loop:");
+      this.emit("  lsr _mul_b");
+      this.emit("  bcc _mul_skip");
+      this.emit("  clc");
+      this.emit("  adc _mul_a");
+      this.emit("_mul_skip:");
+      this.emit("  asl _mul_a");
+      this.emit("  dex");
+      this.emit("  bne _mul_loop");
+      this.emit("  rts");
+      this.emit("");
+    }
 
-    // 8-bit divide (result in A, remainder in X)
-    this.emit("_div_a: .byte 0");
-    this.emit("_div_b: .byte 0");
-    this.emit("_divide:");
-    this.emit("  ldx #0");
-    this.emit("  lda _div_a");
-    this.emit("_div_loop:");
-    this.emit("  cmp _div_b");
-    this.emit("  bcc _div_done");
-    this.emit("  sec");
-    this.emit("  sbc _div_b");
-    this.emit("  inx");
-    this.emit("  jmp _div_loop");
-    this.emit("_div_done:");
-    this.emit("  stx _tmp");
-    this.emit("  lda _tmp");
-    this.emit("  rts");
-    this.emit("");
+    // 8-bit divide
+    if (this.runtime.divide) {
+      this.emit("_div_a: .byte 0");
+      this.emit("_div_b: .byte 0");
+      this.emit("_divide:");
+      this.emit("  ldx #0");
+      this.emit("  lda _div_a");
+      this.emit("_div_loop:");
+      this.emit("  cmp _div_b");
+      this.emit("  bcc _div_done");
+      this.emit("  sec");
+      this.emit("  sbc _div_b");
+      this.emit("  inx");
+      this.emit("  jmp _div_loop");
+      this.emit("_div_done:");
+      this.emit("  stx _tmp");
+      this.emit("  lda _tmp");
+      this.emit("  rts");
+      this.emit("");
+    }
 
-    // Print u16 (simple decimal output)
-    this.emit("; write_u16_ln - print 16-bit number and newline");
-    this.emit("_print_val: .byte 0, 0");
-    this.emit("_print_buf: .byte 0, 0, 0, 0, 0, 0");
-    this.emit("write_u16_ln:");
-    this.emit("  sta _print_val");
-    this.emit("  stx _print_val+1");
-    this.emit("  ; Convert to decimal string");
-    this.emit("  ldy #0");
-    this.emit("_p16_loop:");
-    this.emit("  lda _print_val");
-    this.emit("  ora _print_val+1");
-    this.emit("  beq _p16_print");
-    this.emit("  ; Divide by 10");
-    this.emit("  jsr _div16_10");
-    this.emit("  ; Remainder (0-9) is in A");
-    this.emit("  clc");
-    this.emit("  adc #$30");
-    this.emit("  sta _print_buf,y");
-    this.emit("  iny");
-    this.emit("  jmp _p16_loop");
-    this.emit("_p16_print:");
-    this.emit("  cpy #0");
-    this.emit("  bne _p16_hasdigits");
-    this.emit("  lda #$30  ; print '0' if value was 0");
-    this.emit("  jsr $ffd2");
-    this.emit("  jmp _p16_newline");
-    this.emit("_p16_hasdigits:");
-    this.emit("_p16_printloop:");
-    this.emit("  dey");
-    this.emit("  lda _print_buf,y");
-    this.emit("  jsr $ffd2  ; CHROUT");
-    this.emit("  cpy #0");
-    this.emit("  bne _p16_printloop");
-    this.emit("_p16_newline:");
-    this.emit("  lda #13");
-    this.emit("  jsr $ffd2");
-    this.emit("  rts");
-    this.emit("");
+    // Print u16 (includes _div16_10)
+    if (this.runtime.writeU16Ln) {
+      this.emit("; write_u16_ln - print 16-bit number and newline");
+      this.emit("_print_val: .byte 0, 0");
+      this.emit("_print_buf: .byte 0, 0, 0, 0, 0, 0");
+      this.emit("write_u16_ln:");
+      this.emit("  sta _print_val");
+      this.emit("  stx _print_val+1");
+      this.emit("  ; Convert to decimal string");
+      this.emit("  ldy #0");
+      this.emit("_p16_loop:");
+      this.emit("  lda _print_val");
+      this.emit("  ora _print_val+1");
+      this.emit("  beq _p16_print");
+      this.emit("  ; Divide by 10");
+      this.emit("  jsr _div16_10");
+      this.emit("  ; Remainder (0-9) is in A");
+      this.emit("  clc");
+      this.emit("  adc #$30");
+      this.emit("  sta _print_buf,y");
+      this.emit("  iny");
+      this.emit("  jmp _p16_loop");
+      this.emit("_p16_print:");
+      this.emit("  cpy #0");
+      this.emit("  bne _p16_hasdigits");
+      this.emit("  lda #$30  ; print '0' if value was 0");
+      this.emit("  jsr $ffd2");
+      this.emit("  jmp _p16_newline");
+      this.emit("_p16_hasdigits:");
+      this.emit("_p16_printloop:");
+      this.emit("  dey");
+      this.emit("  lda _print_buf,y");
+      this.emit("  jsr $ffd2  ; CHROUT");
+      this.emit("  cpy #0");
+      this.emit("  bne _p16_printloop");
+      this.emit("_p16_newline:");
+      this.emit("  lda #13");
+      this.emit("  jsr $ffd2");
+      this.emit("  rts");
+      this.emit("");
 
-    // Divide 16-bit by 10
-    this.emit("_div16_10:");
-    this.emit("  lda #0");
-    this.emit("  ldx #16");
-    this.emit("_d10_loop:");
-    this.emit("  asl _print_val");
-    this.emit("  rol _print_val+1");
-    this.emit("  rol a");
-    this.emit("  cmp #10");
-    this.emit("  bcc _d10_skip");
-    this.emit("  sbc #10");
-    this.emit("  inc _print_val");
-    this.emit("_d10_skip:");
-    this.emit("  dex");
-    this.emit("  bne _d10_loop");
-    this.emit("  ; Remainder in A, quotient in _print_val");
-    this.emit("  rts");
+      // Divide 16-bit by 10 (only needed by write_u16_ln)
+      this.emit("_div16_10:");
+      this.emit("  lda #0");
+      this.emit("  ldx #16");
+      this.emit("_d10_loop:");
+      this.emit("  asl _print_val");
+      this.emit("  rol _print_val+1");
+      this.emit("  rol a");
+      this.emit("  cmp #10");
+      this.emit("  bcc _d10_skip");
+      this.emit("  sbc #10");
+      this.emit("  inc _print_val");
+      this.emit("_d10_skip:");
+      this.emit("  dex");
+      this.emit("  bne _d10_loop");
+      this.emit("  ; Remainder in A, quotient in _print_val");
+      this.emit("  rts");
+    }
   }
 }

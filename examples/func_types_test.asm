@@ -344,41 +344,6 @@ sum_to_u16:
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
 
-_poke_addr = $fb  ; ZP location for indirect addressing
-
-_mul_a: .byte 0
-_mul_b: .byte 0
-_multiply:
-  lda #0
-  ldx #8
-_mul_loop:
-  lsr _mul_b
-  bcc _mul_skip
-  clc
-  adc _mul_a
-_mul_skip:
-  asl _mul_a
-  dex
-  bne _mul_loop
-  rts
-
-_div_a: .byte 0
-_div_b: .byte 0
-_divide:
-  ldx #0
-  lda _div_a
-_div_loop:
-  cmp _div_b
-  bcc _div_done
-  sec
-  sbc _div_b
-  inx
-  jmp _div_loop
-_div_done:
-  stx _tmp
-  lda _tmp
-  rts
-
 ; write_u16_ln - print 16-bit number and newline
 _print_val: .byte 0, 0
 _print_buf: .byte 0, 0, 0, 0, 0, 0
