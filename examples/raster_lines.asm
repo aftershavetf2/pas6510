@@ -33,5 +33,3 @@ _endwhile_1:
 
 
 ; Variables
-_var_main_line:
-  .byte 0
