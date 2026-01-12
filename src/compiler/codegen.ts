@@ -17,6 +17,7 @@ import {
 } from "./ast";
 import { ResolvedProgram, ResolvedModule } from "./resolver";
 import { peepholeOptimize } from "./peephole";
+import { computeReachableSet } from "./dce";
 
 interface Variable {
   name: string;
@@ -174,6 +175,9 @@ export class CodeGenerator {
 
     const mainProgram = resolved.mainModule.program;
 
+    // Compute reachable set for dead code elimination
+    const reachable = computeReachableSet(resolved);
+
     // Build function signature table from all modules
     for (const dep of resolved.dependencies) {
       for (const proc of dep.program.procedures) {
@@ -257,16 +261,16 @@ export class CodeGenerator {
         }
       }
 
-      // Generate public procedures
+      // Generate public procedures (only if reachable)
       for (const proc of dep.program.procedures) {
-        if (proc.isPublic) {
+        if (proc.isPublic && reachable.has(proc.name)) {
           this.generateProcedure(proc);
         }
       }
 
-      // Generate public functions
+      // Generate public functions (only if reachable)
       for (const func of dep.program.functions) {
-        if (func.isPublic) {
+        if (func.isPublic && reachable.has(func.name)) {
           this.generateFunction(func);
         }
       }

@@ -12,16 +12,8 @@ start:
   rts
 
 ; Module: sys
-; Procedure: irq_enable
-irq_enable:
-  rts
-
 ; Procedure: irq_disable
 irq_disable:
-  rts
-
-; Procedure: memset
-memset:
   rts
 
 ; Main module: noise
@@ -40,9 +32,3 @@ _endwhile_1:
 
 
 ; Variables
-_var_memset_addr:
-  .byte 0, 0
-_var_memset_len:
-  .byte 0
-_var_memset_value:
-  .byte 0

@@ -12,16 +12,8 @@ start:
   rts
 
 ; Module: sys
-; Procedure: irq_enable
-irq_enable:
-  rts
-
 ; Procedure: irq_disable
 irq_disable:
-  rts
-
-; Procedure: memset
-memset:
   rts
 
 ; Main module: raster_lines
@@ -34,7 +26,6 @@ _while_0:
   jmp _endwhile_1
 _skip_2:
   lda $d012
-  sta _var_main_line
   sta $d020
   jmp _while_0
 _endwhile_1:
@@ -42,11 +33,5 @@ _endwhile_1:
 
 
 ; Variables
-_var_memset_addr:
-  .byte 0, 0
-_var_memset_len:
-  .byte 0
-_var_memset_value:
-  .byte 0
 _var_main_line:
   .byte 0

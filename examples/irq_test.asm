@@ -20,10 +20,6 @@ irq_enable:
 irq_disable:
   rts
 
-; Procedure: memset
-memset:
-  rts
-
 ; Main module: irq_test
 ; Procedure: main
 main:
@@ -35,9 +31,3 @@ main:
 
 
 ; Variables
-_var_memset_addr:
-  .byte 0, 0
-_var_memset_len:
-  .byte 0
-_var_memset_value:
-  .byte 0
