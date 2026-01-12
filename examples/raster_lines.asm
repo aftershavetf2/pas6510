@@ -35,7 +35,6 @@ _while_0:
 _skip_2:
   lda $d012
   sta _var_main_line
-  lda _var_main_line
   sta $d020
   jmp _while_0
 _endwhile_1:

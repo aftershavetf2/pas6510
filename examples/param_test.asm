@@ -32,7 +32,6 @@ main:
   sta _var_inc_u8_x
   jsr inc_u8
   sta _var_main_r8
-  lda _var_main_r8
   ldx #0
   jsr write_u16_ln
   lda #10
@@ -41,7 +40,6 @@ main:
   sta _var_add_u8_b
   jsr add_u8
   sta _var_main_r8
-  lda _var_main_r8
   ldx #0
   jsr write_u16_ln
   lda #231
@@ -70,7 +68,6 @@ main:
   jsr write_u16_ln
   lda #200
   sta _var_mul_u8_to_u16_a
-  lda #200
   sta _var_mul_u8_to_u16_b
   jsr mul_u8_to_u16
   sta _var_main_r16
@@ -104,7 +101,6 @@ inc_u8:
   clc
   adc _tmp
   rts
-  rts
 
 ; Function: add_u8
 add_u8:
@@ -115,7 +111,6 @@ add_u8:
   pla
   clc
   adc _tmp
-  rts
   rts
 
 ; Function: inc_u16
@@ -134,7 +129,6 @@ inc_u16:
   tax
   pla
   rts
-  rts
 
 ; Function: add_u16
 add_u16:
@@ -151,7 +145,6 @@ add_u16:
   adc _tmp16+1
   tax
   pla
-  rts
   rts
 
 ; Function: mul_u8_to_u16
@@ -174,7 +167,6 @@ mul_u8_to_u16:
   stx _var_mul_u8_to_u16_result+1
   lda _var_mul_u8_to_u16_result
   ldx _var_mul_u8_to_u16_result+1
-  rts
   rts
 
 

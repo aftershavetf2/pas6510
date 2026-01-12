@@ -16,6 +16,7 @@ import {
   ArrayType,
 } from "./ast";
 import { ResolvedProgram, ResolvedModule } from "./resolver";
+import { peepholeOptimize } from "./peephole";
 
 interface Variable {
   name: string;
@@ -131,6 +132,9 @@ export class CodeGenerator {
       this.emit(`${label}:`);
       this.emitBytes(v.size);
     }
+
+    // Apply peephole optimization
+    this.output = peepholeOptimize(this.output);
 
     return this.output.join("\n");
   }
@@ -279,6 +283,9 @@ export class CodeGenerator {
       this.emit(`${label}:`);
       this.emitBytes(v.size);
     }
+
+    // Apply peephole optimization
+    this.output = peepholeOptimize(this.output);
 
     return this.output.join("\n");
   }

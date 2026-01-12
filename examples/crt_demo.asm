@@ -29,7 +29,6 @@ memset:
 crt_init:
   lda #0
   sta _var_cursor_x
-  lda #0
   sta _var_cursor_y
   lda #14
   sta _var_text_color
@@ -307,7 +306,6 @@ _memset_full_loop_39:
 _memset_done_36:
   lda #0
   sta _var_cursor_x
-  lda #0
   sta _var_cursor_y
   rts
 
@@ -350,7 +348,6 @@ putch:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   inc _var_cursor_x
   lda _var_cursor_x
@@ -366,7 +363,6 @@ _else_43:
 putc:
   lda _var_putc_ch
   sta _var_putc_sc
-  lda _var_putc_sc
   cmp #65
   bcs _skip_48
   jmp _else_46
@@ -858,7 +854,6 @@ _endwhile_88:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   lda #64
   pha
@@ -996,7 +991,6 @@ _memset_done_95:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   lda #1
   sta _var_box_i
@@ -1058,7 +1052,6 @@ _skip_101:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   lda _var_box_saddr
   ldx _var_box_saddr+1
@@ -1090,7 +1083,6 @@ _skip_101:
   sta _poke_addr
   stx _poke_addr+1
   lda #93
-  ldy #0
   sta (_poke_addr),y
   lda _var_box_caddr
   ldx _var_box_caddr+1
@@ -1122,7 +1114,6 @@ _skip_101:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   inc _var_box_i
   jmp _while_99
@@ -1169,7 +1160,6 @@ _endwhile_100:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   lda #64
   pha
@@ -1307,7 +1297,6 @@ _memset_done_106:
   sta _poke_addr
   stx _poke_addr+1
   lda _var_text_color
-  ldy #0
   sta (_poke_addr),y
   rts
 
@@ -1339,7 +1328,6 @@ _gt_false_115:
 _gt_cont_116:
   lda _var_putnum_temp
   pha
-  lda _var_putnum_temp
   pha
   lda #10
   sta _tmp
@@ -1639,7 +1627,6 @@ main:
   jsr putnum
   lda #8
   sta _var_gotoxy_x
-  lda #8
   sta _var_gotoxy_y
   jsr gotoxy
   lda #2

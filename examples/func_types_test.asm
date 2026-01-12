@@ -74,7 +74,6 @@ test_u8_identity:
   sta _var_identity_u8_x
   jsr identity_u8
   sta _var_test_u8_identity_result
-  lda _var_test_u8_identity_result
   cmp #55
   beq _skip_2
   jmp _else_0
@@ -94,7 +93,6 @@ test_u8_add:
   sta _var_add_u8_b
   jsr add_u8
   sta _var_test_u8_add_result
-  lda _var_test_u8_add_result
   cmp #30
   beq _skip_5
   jmp _else_3
@@ -112,7 +110,6 @@ test_u8_double:
   sta _var_double_u8_x
   jsr double_u8
   sta _var_test_u8_double_result
-  lda _var_test_u8_double_result
   cmp #50
   beq _skip_8
   jmp _else_6
@@ -128,7 +125,6 @@ _endif_7:
 test_u8_const:
   jsr const_u8
   sta _var_test_u8_const_result
-  lda _var_test_u8_const_result
   cmp #42
   beq _skip_11
   jmp _else_9
@@ -248,7 +244,6 @@ main:
 identity_u8:
   lda _var_identity_u8_x
   rts
-  rts
 
 ; Function: add_u8
 add_u8:
@@ -260,33 +255,27 @@ add_u8:
   clc
   adc _tmp
   rts
-  rts
 
 ; Function: double_u8
 double_u8:
   lda _var_double_u8_x
   pha
-  lda _var_double_u8_x
   sta _tmp
   pla
   clc
   adc _tmp
   sta _var_double_u8_temp
-  lda _var_double_u8_temp
-  rts
   rts
 
 ; Function: const_u8
 const_u8:
   lda #42
   rts
-  rts
 
 ; Function: identity_u16
 identity_u16:
   lda _var_identity_u16_x
   ldx _var_identity_u16_x+1
-  rts
   rts
 
 ; Function: add_u16
@@ -305,13 +294,11 @@ add_u16:
   tax
   pla
   rts
-  rts
 
 ; Function: const_u16
 const_u16:
   lda #232
   ldx #3
-  rts
   rts
 
 ; Function: big_const
@@ -319,13 +306,11 @@ big_const:
   lda #64
   ldx #156
   rts
-  rts
 
 ; Function: u8_to_u16
 u8_to_u16:
   lda _var_u8_to_u16_x
   ldx #0
-  rts
   rts
 
 ; Function: sum_to_u16
@@ -351,7 +336,6 @@ sum_to_u16:
   stx _var_sum_to_u16_result+1
   lda _var_sum_to_u16_result
   ldx _var_sum_to_u16_result+1
-  rts
   rts
 
 

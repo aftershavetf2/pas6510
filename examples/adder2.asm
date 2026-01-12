@@ -18,7 +18,6 @@ main:
   ldx #0
   sta _var_main_sum
   stx _var_main_sum+1
-  lda #0
   sta _var_main_i
 _for_0:
   lda _var_main_sum

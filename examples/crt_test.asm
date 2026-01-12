@@ -25,7 +25,6 @@ main:
   lda #1
   ldy #0
   sta (_poke_addr),y
-  lda #1
   ldx #4
   sta _var_main_addr
   stx _var_main_addr+1
@@ -34,9 +33,7 @@ main:
   sta _poke_addr
   stx _poke_addr+1
   lda #2
-  ldy #0
   sta (_poke_addr),y
-  lda #2
   ldx #4
   sta _var_main_addr
   stx _var_main_addr+1
@@ -45,7 +42,6 @@ main:
   sta _poke_addr
   stx _poke_addr+1
   lda #3
-  ldy #0
   sta (_poke_addr),y
   lda #40
   ldx #4
@@ -56,7 +52,6 @@ main:
   sta _poke_addr
   stx _poke_addr+1
   lda #4
-  ldy #0
   sta (_poke_addr),y
   lda #0
   ldx #216
@@ -67,7 +62,6 @@ main:
   sta _poke_addr
   stx _poke_addr+1
   lda #1
-  ldy #0
   sta (_poke_addr),y
   rts
 
