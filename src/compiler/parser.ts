@@ -9,7 +9,7 @@ import {
   GlobalVarDecl,
   ConstDecl,
   GlobalConstDecl,
-  ImportNode,
+  UseNode,
   StatementNode,
   ExpressionNode,
   DataType,
@@ -66,10 +66,10 @@ export class Parser {
   }
 
   private parseProgram(): ProgramNode {
-    // Parse imports first (before ORG and PROGRAM)
-    const imports: ImportNode[] = [];
-    while (this.match(TokenType.IMPORT)) {
-      imports.push(this.parseImportStatement());
+    // Parse use statements first (before ORG and PROGRAM)
+    const uses: UseNode[] = [];
+    while (this.match(TokenType.USE)) {
+      uses.push(this.parseUseStatement());
     }
 
     // Check for optional ORG directive before program
@@ -113,7 +113,7 @@ export class Parser {
       kind: "Program",
       name: nameToken.value,
       org,
-      imports,
+      uses,
       globals,
       globalConsts,
       procedures,
@@ -121,22 +121,14 @@ export class Parser {
     };
   }
 
-  private parseImportStatement(): ImportNode {
-    this.expect(TokenType.IMPORT);
-    const names: string[] = [];
-
-    // Parse comma-separated list of identifiers
-    names.push(this.expect(TokenType.IDENTIFIER).value);
-    while (this.match(TokenType.COMMA)) {
-      this.advance();
-      names.push(this.expect(TokenType.IDENTIFIER).value);
-    }
-
-    this.expect(TokenType.FROM);
-    const modulePath = this.expect(TokenType.STRING).value;
+  private parseUseStatement(): UseNode {
+    this.expect(TokenType.USE);
+    const moduleName = this.expect(TokenType.IDENTIFIER).value;
     this.expect(TokenType.SEMICOLON);
-
-    return { names, modulePath };
+    return {
+      moduleName,
+      modulePath: moduleName + ".pas"
+    };
   }
 
   private parseGlobalVar(isPublic: boolean): GlobalVarDecl {
@@ -387,11 +379,20 @@ export class Parser {
     if (this.match(TokenType.IDENTIFIER)) {
       const name = this.advance().value;
 
+      // Check for module-qualified access (module.symbol)
+      let moduleName: string | undefined;
+      let symbolName = name;
+      if (this.match(TokenType.DOT)) {
+        this.advance();
+        moduleName = name;
+        symbolName = this.expect(TokenType.IDENTIFIER).value;
+      }
+
       // Procedure call
       if (this.match(TokenType.LPAREN)) {
         const args = this.parseArgs();
         this.expect(TokenType.SEMICOLON);
-        return { kind: "Call", name, args } as CallNode;
+        return { kind: "Call", name: symbolName, args, moduleName } as CallNode;
       }
 
       // Array assignment
@@ -404,7 +405,7 @@ export class Parser {
         this.expect(TokenType.SEMICOLON);
         return {
           kind: "Assignment",
-          target: { kind: "ArrayAccess", array: name, index },
+          target: { kind: "ArrayAccess", array: symbolName, index, moduleName },
           value,
         } as AssignmentNode;
       }
@@ -415,7 +416,7 @@ export class Parser {
       this.expect(TokenType.SEMICOLON);
       return {
         kind: "Assignment",
-        target: { kind: "Variable", name },
+        target: { kind: "Variable", name: symbolName, moduleName },
         value,
       } as AssignmentNode;
     }
@@ -627,10 +628,19 @@ export class Parser {
     if (this.match(TokenType.IDENTIFIER)) {
       const name = this.advance().value;
 
+      // Check for module-qualified access (module.symbol)
+      let moduleName: string | undefined;
+      let symbolName = name;
+      if (this.match(TokenType.DOT)) {
+        this.advance();
+        moduleName = name;
+        symbolName = this.expect(TokenType.IDENTIFIER).value;
+      }
+
       // Function call
       if (this.match(TokenType.LPAREN)) {
         const args = this.parseArgs();
-        return { kind: "CallExpr", name, args };
+        return { kind: "CallExpr", name: symbolName, args, moduleName };
       }
 
       // Array access
@@ -638,11 +648,11 @@ export class Parser {
         this.advance();
         const index = this.parseExpression();
         this.expect(TokenType.RBRACKET);
-        return { kind: "ArrayAccess", array: name, index };
+        return { kind: "ArrayAccess", array: symbolName, index, moduleName };
       }
 
       // Simple variable
-      return { kind: "Variable", name };
+      return { kind: "Variable", name: symbolName, moduleName };
     }
 
     throw new Error(

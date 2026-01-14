@@ -1,5 +1,5 @@
-import wait_line from "../lib/crt.pas";
-import irq_disable from "../lib/sys.pas";
+use crt;
+use sys;
 
 program border_flash
 
@@ -7,11 +7,11 @@ proc main()
     var y : u8;
     var i : u8;
 
-    irq_disable();
+    sys.irq_disable();
 
     while 1 do
         for y = 100 to 200 do
-            wait_line(y);    
+            crt.wait_line(y);
             poke($d020, 1);
 
             for i = 0 to 255 do

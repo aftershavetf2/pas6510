@@ -8,6 +8,7 @@ export enum TokenType {
   VAR = "VAR",
   CONST = "CONST",
   PUB = "PUB",
+  USE = "USE",
   IMPORT = "IMPORT",
   FROM = "FROM",
   DO = "DO",
@@ -58,6 +59,7 @@ export enum TokenType {
   COLON = "COLON",         // :
   SEMICOLON = "SEMICOLON", // ;
   COMMA = "COMMA",         // ,
+  DOT = "DOT",             // .
 
   // Directives
   DIRECTIVE_ORG = "DIRECTIVE_ORG",  // {ORG 0x1000}
@@ -80,6 +82,7 @@ export const KEYWORDS: Record<string, TokenType> = {
   var: TokenType.VAR,
   const: TokenType.CONST,
   pub: TokenType.PUB,
+  use: TokenType.USE,
   import: TokenType.IMPORT,
   from: TokenType.FROM,
   do: TokenType.DO,

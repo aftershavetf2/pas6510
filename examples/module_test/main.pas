@@ -1,11 +1,11 @@
-import set_ten, calc_sum, CONST_TEN, RESULT from "math.pas";
+use math;
 
 program main
 
 proc main()
-    set_ten();
-    write_u16_ln(CONST_TEN);
+    math.set_ten();
+    write_u16_ln(math.CONST_TEN);
 
-    calc_sum();
-    write_u16_ln(RESULT);
+    math.calc_sum();
+    write_u16_ln(math.RESULT);
 end;

@@ -13,12 +13,12 @@ start:
 
 ; Module: sys
 ; Procedure: irq_disable
-irq_disable:
+sys_irq_disable:
   rts
 
 ; Module: crt
 ; Procedure: wait_line
-wait_line:
+crt_wait_line:
 _while_0:
   lda $d011
   cmp #127
@@ -31,7 +31,7 @@ _gt_cont_3:
 _endwhile_1:
 _while_4:
   lda $d012
-  cmp _var_wait_line_line
+  cmp _var_crt_wait_line_line
   bne _skip_6
   jmp _endwhile_5
 _skip_6:
@@ -52,8 +52,8 @@ _skip_9:
   sta _var_main_y
 _for_10:
   lda _var_main_y
-  sta _var_wait_line_line
-  jsr wait_line
+  sta _var_crt_wait_line_line
+  jsr crt_wait_line
   lda #1
   sta $d020
   lda #0
@@ -77,7 +77,7 @@ _endwhile_8:
 
 
 ; Variables
-_var_wait_line_line:
+_var_crt_wait_line_line:
   .byte 0
 _var_main_y:
   .byte 0

@@ -11,27 +11,27 @@ start:
   jsr main
   rts
 
-; Module: math_module
+; Module: math
 ; Procedure: set_ten
-set_ten:
+math_set_ten:
   lda #10
-  sta _var_CONST_TEN
+  sta _var_math_CONST_TEN
   rts
 
 ; Procedure: calc_sum
-calc_sum:
+math_calc_sum:
   lda #0
   ldx #0
-  sta _var_RESULT
-  stx _var_RESULT+1
+  sta _var_math_RESULT
+  stx _var_math_RESULT+1
   lda #1
-  sta _var_i
+  sta _var_math_calc_sum_i
 _for_0:
-  lda _var_RESULT
-  ldx _var_RESULT+1
+  lda _var_math_RESULT
+  ldx _var_math_RESULT+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_i
+  lda _var_math_calc_sum_i
   ldx #0
   clc
   adc _tmp16
@@ -40,65 +40,33 @@ _for_0:
   adc _tmp16+1
   tax
   pla
-  sta _var_RESULT
-  stx _var_RESULT+1
-  inc _var_i
-  lda _var_i
+  sta _var_math_RESULT
+  stx _var_math_RESULT+1
+  inc _var_math_calc_sum_i
+  lda _var_math_calc_sum_i
   cmp #6
-  bne _for_0
+  beq _endfor_1
+  jmp _for_0
+_endfor_1:
   rts
 
 ; Main module: main
 ; Procedure: main
 main:
-  jsr set_ten
-  lda _var_CONST_TEN
+  jsr math_set_ten
+  lda _var_math_CONST_TEN
   ldx #0
   jsr write_u16_ln
-  jsr calc_sum
-  lda _var_RESULT
-  ldx _var_RESULT+1
+  jsr math_calc_sum
+  lda _var_math_RESULT
+  ldx _var_math_RESULT+1
   jsr write_u16_ln
   rts
 
 
 ; Runtime library
 
-_tmp: .byte 0
 _tmp16: .byte 0, 0
-
-_mul_a: .byte 0
-_mul_b: .byte 0
-_multiply:
-  lda #0
-  ldx #8
-_mul_loop:
-  lsr _mul_b
-  bcc _mul_skip
-  clc
-  adc _mul_a
-_mul_skip:
-  asl _mul_a
-  dex
-  bne _mul_loop
-  rts
-
-_div_a: .byte 0
-_div_b: .byte 0
-_divide:
-  ldx #0
-  lda _div_a
-_div_loop:
-  cmp _div_b
-  bcc _div_done
-  sec
-  sbc _div_b
-  inx
-  jmp _div_loop
-_div_done:
-  stx _tmp
-  lda _tmp
-  rts
 
 ; write_u16_ln - print 16-bit number and newline
 _print_val: .byte 0, 0
@@ -156,9 +124,9 @@ _d10_skip:
   rts
 
 ; Variables
-_var_CONST_TEN:
+_var_math_CONST_TEN:
   .byte 0
-_var_RESULT:
+_var_math_RESULT:
   .byte 0, 0
-_var_i:
+_var_math_calc_sum_i:
   .byte 0

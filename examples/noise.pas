@@ -1,9 +1,9 @@
-import irq_disable from "../lib/sys.pas";
+use sys;
 
 program noise
 
 proc main()
-    irq_disable();
+    sys.irq_disable();
     
     while 1 do
         dec($d418);

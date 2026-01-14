@@ -1,4 +1,4 @@
-import memset from "sys.pas";
+use sys;
 
 program crt
 
@@ -167,8 +167,8 @@ pub proc hline(ch: u8, len: u8)
     saddr := SCREEN_BASE + yoff + cursor_x;
     caddr := COLOR_BASE + yoff + cursor_x;
 
-    memset(saddr, len, ch);
-    memset(caddr, len, text_color);
+    sys.memset(saddr, len, ch);
+    sys.memset(caddr, len, text_color);
 
     cursor_x := cursor_x + len;
 end;
@@ -194,8 +194,8 @@ pub proc fillrect(x: u8, y: u8, w: u8, h: u8, ch: u8)
 
     row := 0;
     while row < h do
-        memset(saddr, w, ch);
-        memset(caddr, w, text_color);
+        sys.memset(saddr, w, ch);
+        sys.memset(caddr, w, text_color);
         saddr := saddr + 40;
         caddr := caddr + 40;
         inc(row);
@@ -228,8 +228,8 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
     { Top line }
     poke(saddr, 112);
     poke(caddr, text_color);
-    memset(saddr + 1, inner_w, 64);
-    memset(caddr + 1, inner_w, text_color);
+    sys.memset(saddr + 1, inner_w, 64);
+    sys.memset(caddr + 1, inner_w, text_color);
     poke(saddr + w - 1, 110);
     poke(caddr + w - 1, text_color);
 
@@ -250,8 +250,8 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
     caddr := caddr + 40;
     poke(saddr, 109);
     poke(caddr, text_color);
-    memset(saddr + 1, inner_w, 64);
-    memset(caddr + 1, inner_w, text_color);
+    sys.memset(saddr + 1, inner_w, 64);
+    sys.memset(caddr + 1, inner_w, text_color);
     poke(saddr + w - 1, 125);
     poke(caddr + w - 1, text_color);
 end;

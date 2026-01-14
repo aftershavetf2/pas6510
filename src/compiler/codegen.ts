@@ -1,5 +1,6 @@
 // Code generator for 6510 assembly
 
+import * as path from "path";
 import {
   ProgramNode,
   ProcedureNode,
@@ -57,6 +58,7 @@ export class CodeGenerator {
   private nextRamAddress: number = 0x0800; // Start of free RAM on C64
   private labelCounter: number = 0;
   private currentProc: string = "";
+  private currentModule: string | null = null; // Current module being generated (for variable lookup)
   private currentReturnType: DataType | null = null;
   private runtime: RuntimeNeeds = this.resetRuntimeNeeds();
 
@@ -151,7 +153,7 @@ export class CodeGenerator {
     this.emit("");
     this.emit("; Variables");
     for (const [key, v] of this.variables) {
-      // Generate label directly from variable info to avoid double-prefixing
+      // For simple generate(), no module variables exist
       const label = v.scope ? `_var_${v.scope}_${v.name}` : `_var_${v.name}`;
       this.emit(`${label}:`);
       this.emitBytes(v.size);
@@ -180,21 +182,33 @@ export class CodeGenerator {
     const usedVars = computeUsedVariables(resolved, reachable);
 
     // Build function signature table from all modules
+    // Include ALL procedures/functions (not just public ones)
+    // because internal procedures may be called by public ones
     for (const dep of resolved.dependencies) {
+      // Use filename-derived module name (e.g., "math.pas" -> "math")
+      const moduleName = path.basename(dep.filePath, ".pas");
       for (const proc of dep.program.procedures) {
-        if (proc.isPublic || dep.filePath === resolved.mainModule.filePath) {
-          this.functionSignatures.set(proc.name, {
-            params: proc.params,
-            returnType: null,
-          });
+        // Store both simple name and module-qualified name
+        const sig = {
+          params: proc.params,
+          returnType: null,
+        };
+        this.functionSignatures.set(proc.name, sig);
+        // Add qualified name for dependencies (not main module)
+        if (dep.filePath !== resolved.mainModule.filePath) {
+          this.functionSignatures.set(`${moduleName}_${proc.name}`, sig);
         }
       }
       for (const func of dep.program.functions) {
-        if (func.isPublic || dep.filePath === resolved.mainModule.filePath) {
-          this.functionSignatures.set(func.name, {
-            params: func.params,
-            returnType: func.returnType,
-          });
+        // Store both simple name and module-qualified name
+        const sig = {
+          params: func.params,
+          returnType: func.returnType,
+        };
+        this.functionSignatures.set(func.name, sig);
+        // Add qualified name for dependencies (not main module)
+        if (dep.filePath !== resolved.mainModule.filePath) {
+          this.functionSignatures.set(`${moduleName}_${func.name}`, sig);
         }
       }
     }
@@ -246,33 +260,59 @@ export class CodeGenerator {
     for (const dep of resolved.dependencies) {
       if (dep.filePath === resolved.mainModule.filePath) continue;
 
-      this.emit(`; Module: ${dep.program.name}`);
+      // Use filename-derived module name (e.g., "math.pas" -> "math")
+      const moduleName = path.basename(dep.filePath, ".pas");
+      this.emit(`; Module: ${moduleName}`);
 
       // Allocate public global variables (only if used)
       for (const global of dep.program.globals) {
-        if (global.isPublic && usedVars.has(global.name)) {
-          this.allocateGlobalVariable(global);
+        const qualifiedVarName = `${moduleName}.${global.name}`;
+        if (global.isPublic && usedVars.has(qualifiedVarName)) {
+          // Allocate with qualified key: moduleName.varName
+          const size = this.getTypeSize(global.varType);
+          const address = this.nextRamAddress;
+          this.nextRamAddress += size;
+
+          const v: Variable = {
+            name: global.name,
+            varType: global.varType,
+            address,
+            size,
+            scope: null,
+          };
+          // Use qualified key for module variables: "moduleName.varName"
+          this.variables.set(qualifiedVarName, v);
         }
       }
 
       // Register public constants (only if used)
       for (const c of dep.program.globalConsts) {
-        if (c.isPublic && usedVars.has(c.name)) {
-          this.registerConstant(c);
+        const qualifiedConstName = `${moduleName}.${c.name}`;
+        if (c.isPublic && usedVars.has(qualifiedConstName)) {
+          // Register with qualified key: moduleName.constName
+          const constant: Constant = {
+            name: c.name,
+            varType: c.varType,
+            value: c.value,
+          };
+          this.constants.set(qualifiedConstName, constant);
         }
       }
 
-      // Generate public procedures (only if reachable)
+      // Generate ALL reachable procedures (public and internal)
+      // Internal procedures may be called by public ones
       for (const proc of dep.program.procedures) {
-        if (proc.isPublic && reachable.has(proc.name)) {
-          this.generateProcedure(proc);
+        const qualifiedName = `${moduleName}_${proc.name}`;
+        if (reachable.has(qualifiedName)) {
+          this.generateProcedure(proc, moduleName);
         }
       }
 
-      // Generate public functions (only if reachable)
+      // Generate ALL reachable functions (public and internal)
       for (const func of dep.program.functions) {
-        if (func.isPublic && reachable.has(func.name)) {
-          this.generateFunction(func);
+        const qualifiedName = `${moduleName}_${func.name}`;
+        if (reachable.has(qualifiedName)) {
+          this.generateFunction(func, moduleName);
         }
       }
     }
@@ -307,8 +347,19 @@ export class CodeGenerator {
     this.emit("");
     this.emit("; Variables");
     for (const [key, v] of this.variables) {
-      // Generate label directly from variable info to avoid double-prefixing
-      const label = v.scope ? `_var_${v.scope}_${v.name}` : `_var_${v.name}`;
+      // Generate label: for module variables (key contains "."), use module prefix
+      // For local variables (scope set), use scope prefix
+      // For global variables, use just the name
+      let label: string;
+      if (key.includes(".")) {
+        // Module variable: key is "moduleName.varName"
+        const [modName, varName] = key.split(".");
+        label = `_var_${modName}_${varName}`;
+      } else if (v.scope) {
+        label = `_var_${v.scope}_${v.name}`;
+      } else {
+        label = `_var_${v.name}`;
+      }
       this.emit(`${label}:`);
       this.emitBytes(v.size);
     }
@@ -337,6 +388,10 @@ export class CodeGenerator {
     if (v && v.scope) {
       return `_var_${v.scope}_${name}`;
     }
+    // If we're in a module and the variable is from this module, use module prefix
+    if (this.currentModule && this.variables.has(`${this.currentModule}.${name}`)) {
+      return `_var_${this.currentModule}_${name}`;
+    }
     return `_var_${name}`;
   }
 
@@ -345,15 +400,31 @@ export class CodeGenerator {
     return `_var_${procName}_${varName}`;
   }
 
+  // Generate variable label with optional module qualification
+  private varLabelQualified(moduleName: string | undefined, name: string): string {
+    if (moduleName) {
+      return `_var_${moduleName}_${name}`;
+    }
+    return this.varLabel(name);
+  }
+
   // Returns the constant value if expr is a compile-time constant, null otherwise
   private getConstantValue(expr: ExpressionNode): number | null {
     if (expr.kind === "NumberLiteral") {
       return expr.value;
     }
     if (expr.kind === "Variable") {
-      const c = this.constants.get(expr.name);
+      const qualifiedKey = expr.moduleName ? `${expr.moduleName}.${expr.name}` : expr.name;
+      const c = this.constants.get(qualifiedKey);
       if (c) {
         return c.value;
+      }
+      // If we're in a module, try module-qualified key
+      if (!expr.moduleName && this.currentModule) {
+        const moduleConst = this.constants.get(`${this.currentModule}.${expr.name}`);
+        if (moduleConst) {
+          return moduleConst.value;
+        }
       }
     }
     return null;
@@ -451,11 +522,16 @@ export class CodeGenerator {
     return v;
   }
 
-  // Look up variable: first check local scope, then global
+  // Look up variable: first check local scope, then module globals, then global
   private getVariable(name: string): Variable | undefined {
     // Try local scope first
     const local = this.variables.get(`${this.currentProc}.${name}`);
     if (local) return local;
+    // If we're in a module, try module-qualified name
+    if (this.currentModule) {
+      const moduleVar = this.variables.get(`${this.currentModule}.${name}`);
+      if (moduleVar) return moduleVar;
+    }
     // Fall back to global
     return this.variables.get(name);
   }
@@ -469,11 +545,14 @@ export class CodeGenerator {
     this.constants.set(decl.name, c);
   }
 
-  private generateProcedure(proc: ProcedureNode): void {
-    this.currentProc = proc.name;
+  private generateProcedure(proc: ProcedureNode, moduleName?: string): void {
+    // Use qualified name for dependencies, simple name for main module
+    const qualifiedName = moduleName ? `${moduleName}_${proc.name}` : proc.name;
+    this.currentProc = qualifiedName;
+    this.currentModule = moduleName || null;
     this.currentReturnType = null;
     this.emit(`; Procedure: ${proc.name}`);
-    this.emit(`${proc.name}:`);
+    this.emit(`${qualifiedName}:`);
 
     // Allocate parameters as variables (caller stores values before jsr)
     for (const param of proc.params) {
@@ -499,11 +578,14 @@ export class CodeGenerator {
     this.emit("");
   }
 
-  private generateFunction(func: FunctionNode): void {
-    this.currentProc = func.name;
+  private generateFunction(func: FunctionNode, moduleName?: string): void {
+    // Use qualified name for dependencies, simple name for main module
+    const qualifiedName = moduleName ? `${moduleName}_${func.name}` : func.name;
+    this.currentProc = qualifiedName;
+    this.currentModule = moduleName || null;
     this.currentReturnType = func.returnType;
     this.emit(`; Function: ${func.name}`);
-    this.emit(`${func.name}:`);
+    this.emit(`${qualifiedName}:`);
 
     // Allocate parameters as variables (caller stores values before jsr)
     for (const param of func.params) {
@@ -557,30 +639,44 @@ export class CodeGenerator {
 
     if (target.kind === "Variable") {
       // Check if trying to assign to a constant
-      if (this.constants.has(target.name)) {
+      const qualifiedConstKey = target.moduleName ? `${target.moduleName}.${target.name}` : target.name;
+      if (this.constants.has(qualifiedConstKey)) {
         throw new Error(`Cannot assign to constant: ${target.name}`);
       }
-      const v = this.getVariable(target.name);
+      // Try qualified lookup first if moduleName is set
+      const v = target.moduleName
+        ? this.variables.get(`${target.moduleName}.${target.name}`)
+        : this.getVariable(target.name);
       if (!v) {
         throw new Error(`Unknown variable: ${target.name}`);
       }
 
+      const label = target.moduleName
+        ? this.varLabelQualified(target.moduleName, target.name)
+        : this.varLabel(target.name);
+
       if (this.is16Bit(v.varType)) {
         // 16-bit assignment
         this.generateExpr16(stmt.value);
-        this.emit(`  sta ${this.varLabel(target.name)}`);
-        this.emit(`  stx ${this.varLabel(target.name)}+1`);
+        this.emit(`  sta ${label}`);
+        this.emit(`  stx ${label}+1`);
       } else {
         // 8-bit assignment
         this.generateExpr8(stmt.value);
-        this.emit(`  sta ${this.varLabel(target.name)}`);
+        this.emit(`  sta ${label}`);
       }
     } else if (target.kind === "ArrayAccess") {
       // Array element assignment
-      const v = this.getVariable(target.array);
+      const v = target.moduleName
+        ? this.variables.get(`${target.moduleName}.${target.array}`)
+        : this.getVariable(target.array);
       if (!v || !isArrayType(v.varType)) {
         throw new Error(`Unknown array: ${target.array}`);
       }
+
+      const arrayLabel = target.moduleName
+        ? this.varLabelQualified(target.moduleName, target.array)
+        : this.varLabel(target.array);
 
       // Calculate index into Y
       this.generateExpr8(target.index);
@@ -590,7 +686,7 @@ export class CodeGenerator {
       this.generateExpr8(stmt.value);
 
       // Store to array
-      this.emit(`  sta ${this.varLabel(target.array)},y`);
+      this.emit(`  sta ${arrayLabel},y`);
     }
   }
 
@@ -709,8 +805,9 @@ export class CodeGenerator {
     if (expr.kind === "NumberLiteral") return true;
     if (expr.kind === "Variable") {
       // Simple if it's a variable or constant
-      return this.getVariable(expr.name) !== undefined ||
-             this.constants.has(expr.name);
+      const qualifiedKey = expr.moduleName ? `${expr.moduleName}.${expr.name}` : expr.name;
+      return (expr.moduleName ? this.variables.has(qualifiedKey) : this.getVariable(expr.name) !== undefined) ||
+             this.constants.has(qualifiedKey);
     }
     if (expr.kind === "CallExpr" && expr.name === "peek") {
       // peek(constant_address) is simple
@@ -724,11 +821,15 @@ export class CodeGenerator {
     if (expr.kind === "NumberLiteral") {
       this.emit(`  cmp #${expr.value & 0xff}`);
     } else if (expr.kind === "Variable") {
-      const c = this.constants.get(expr.name);
+      const qualifiedKey = expr.moduleName ? `${expr.moduleName}.${expr.name}` : expr.name;
+      const c = this.constants.get(qualifiedKey);
       if (c) {
         this.emit(`  cmp #${c.value & 0xff}`);
       } else {
-        this.emit(`  cmp ${this.varLabel(expr.name)}`);
+        const label = expr.moduleName
+          ? this.varLabelQualified(expr.moduleName, expr.name)
+          : this.varLabel(expr.name);
+        this.emit(`  cmp ${label}`);
       }
     } else if (expr.kind === "CallExpr" && expr.name === "peek") {
       const addr = this.getConstantValue(expr.args[0])!;
@@ -812,7 +913,7 @@ export class CodeGenerator {
     }
   }
 
-  private generateCall(stmt: { name: string; args: ExpressionNode[] }): void {
+  private generateCall(stmt: { name: string; args: ExpressionNode[]; moduleName?: string }): void {
     // Handle built-in CPU instructions
     if (stmt.name === "irq_enable") {
       this.emit(`  cli`);
@@ -1025,14 +1126,27 @@ export class CodeGenerator {
     }
 
     // Look up function signature for user-defined functions
-    const sig = this.functionSignatures.get(stmt.name);
+    // Use qualified name if moduleName is provided, or if we're in a module context
+    let lookupName = stmt.moduleName ? `${stmt.moduleName}_${stmt.name}` : stmt.name;
+    let targetLabel = stmt.moduleName ? `${stmt.moduleName}_${stmt.name}` : stmt.name;
+
+    // If we're in a module and no explicit moduleName, check if this is a module-internal call
+    if (!stmt.moduleName && this.currentModule) {
+      const moduleQualified = `${this.currentModule}_${stmt.name}`;
+      if (this.functionSignatures.has(moduleQualified)) {
+        lookupName = moduleQualified;
+        targetLabel = moduleQualified;
+      }
+    }
+
+    const sig = this.functionSignatures.get(lookupName);
     if (sig && sig.params.length > 0) {
       // Store arguments to parameter variables (in target function's scope)
       for (let i = 0; i < stmt.args.length && i < sig.params.length; i++) {
         const param = sig.params[i];
         const paramType = param.varType;
         const is16Bit = paramType === "i16" || paramType === "u16" || paramType === "ptr";
-        const paramLabel = this.varLabelForProc(stmt.name, param.name);
+        const paramLabel = this.varLabelForProc(targetLabel, param.name);
 
         if (is16Bit) {
           this.generateExpr16(stmt.args[i]);
@@ -1044,7 +1158,7 @@ export class CodeGenerator {
         }
       }
     }
-    this.emit(`  jsr ${stmt.name}`);
+    this.emit(`  jsr ${targetLabel}`);
   }
 
   private generateReturn(stmt: { value?: ExpressionNode }): void {
@@ -1069,25 +1183,41 @@ export class CodeGenerator {
         this.emit(`  lda #${expr.value & 0xff}`);
         break;
 
-      case "Variable":
+      case "Variable": {
         // Check if it's a constant first
-        const c8 = this.constants.get(expr.name);
+        const qualifiedKey = expr.moduleName ? `${expr.moduleName}.${expr.name}` : expr.name;
+        let c8 = this.constants.get(qualifiedKey);
+        // If not found and we're in a module, try module-qualified key
+        if (!c8 && !expr.moduleName && this.currentModule) {
+          c8 = this.constants.get(`${this.currentModule}.${expr.name}`);
+        }
         if (c8) {
           this.emit(`  lda #${c8.value & 0xff}`);
           break;
         }
-        const v = this.getVariable(expr.name);
+        // Try qualified lookup first if moduleName is set
+        const v = expr.moduleName
+          ? this.variables.get(qualifiedKey)
+          : this.getVariable(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);
         }
-        this.emit(`  lda ${this.varLabel(expr.name)}`);
+        const label = expr.moduleName
+          ? this.varLabelQualified(expr.moduleName, expr.name)
+          : this.varLabel(expr.name);
+        this.emit(`  lda ${label}`);
         break;
+      }
 
-      case "ArrayAccess":
+      case "ArrayAccess": {
+        const arrayLabel = expr.moduleName
+          ? this.varLabelQualified(expr.moduleName, expr.array)
+          : this.varLabel(expr.array);
         this.generateExpr8(expr.index);
         this.emit(`  tay`);
-        this.emit(`  lda ${this.varLabel(expr.array)},y`);
+        this.emit(`  lda ${arrayLabel},y`);
         break;
+      }
 
       case "BinaryOp":
         this.generateBinaryOp8(expr);
@@ -1131,14 +1261,27 @@ export class CodeGenerator {
           }
         } else {
           // Regular function call - store arguments to parameter variables
-          const sig = this.functionSignatures.get(expr.name);
+          // Use qualified name if moduleName is provided, or if we're in a module context
+          let lookupName = expr.moduleName ? `${expr.moduleName}_${expr.name}` : expr.name;
+          let targetLabel = expr.moduleName ? `${expr.moduleName}_${expr.name}` : expr.name;
+
+          // If we're in a module and no explicit moduleName, check if this is a module-internal call
+          if (!expr.moduleName && this.currentModule) {
+            const moduleQualified = `${this.currentModule}_${expr.name}`;
+            if (this.functionSignatures.has(moduleQualified)) {
+              lookupName = moduleQualified;
+              targetLabel = moduleQualified;
+            }
+          }
+
+          const sig = this.functionSignatures.get(lookupName);
           if (sig && sig.params.length > 0) {
             for (let i = 0; i < expr.args.length && i < sig.params.length; i++) {
               const param = sig.params[i];
               const paramIs16Bit = param.varType === "i16" ||
                                    param.varType === "u16" ||
                                    param.varType === "ptr";
-              const paramLabel = this.varLabelForProc(expr.name, param.name);
+              const paramLabel = this.varLabelForProc(targetLabel, param.name);
               if (paramIs16Bit) {
                 this.generateExpr16(expr.args[i]);
                 this.emit(`  sta ${paramLabel}`);
@@ -1149,7 +1292,7 @@ export class CodeGenerator {
               }
             }
           }
-          this.emit(`  jsr ${expr.name}`);
+          this.emit(`  jsr ${targetLabel}`);
         }
         // Result expected in A
         break;
@@ -1219,9 +1362,14 @@ export class CodeGenerator {
         this.emit(`  ldx #${hi}`);
         break;
 
-      case "Variable":
+      case "Variable": {
         // Check if it's a constant first
-        const c16 = this.constants.get(expr.name);
+        const qualifiedKey16 = expr.moduleName ? `${expr.moduleName}.${expr.name}` : expr.name;
+        let c16 = this.constants.get(qualifiedKey16);
+        // If not found and we're in a module, try module-qualified key
+        if (!c16 && !expr.moduleName && this.currentModule) {
+          c16 = this.constants.get(`${this.currentModule}.${expr.name}`);
+        }
         if (c16) {
           const cLo = c16.value & 0xff;
           const cHi = (c16.value >> 8) & 0xff;
@@ -1229,25 +1377,45 @@ export class CodeGenerator {
           this.emit(`  ldx #${cHi}`);
           break;
         }
-        const v = this.getVariable(expr.name);
+        // Try qualified lookup first if moduleName is set
+        const v = expr.moduleName
+          ? this.variables.get(qualifiedKey16)
+          : this.getVariable(expr.name);
         if (!v) {
           throw new Error(`Unknown variable: ${expr.name}`);
         }
-        this.emit(`  lda ${this.varLabel(expr.name)}`);
+        const label16 = expr.moduleName
+          ? this.varLabelQualified(expr.moduleName, expr.name)
+          : this.varLabel(expr.name);
+        this.emit(`  lda ${label16}`);
         if (this.is16Bit(v.varType)) {
-          this.emit(`  ldx ${this.varLabel(expr.name)}+1`);
+          this.emit(`  ldx ${label16}+1`);
         } else {
           this.emit(`  ldx #0`);
         }
         break;
+      }
 
       case "BinaryOp":
         this.generateBinaryOp16(expr);
         break;
 
-      case "CallExpr":
+      case "CallExpr": {
         // Function call - look up signature
-        const callSig = this.functionSignatures.get(expr.name);
+        // Use qualified name if moduleName is provided, or if we're in a module context
+        let lookupName16 = expr.moduleName ? `${expr.moduleName}_${expr.name}` : expr.name;
+        let targetLabel16 = expr.moduleName ? `${expr.moduleName}_${expr.name}` : expr.name;
+
+        // If we're in a module and no explicit moduleName, check if this is a module-internal call
+        if (!expr.moduleName && this.currentModule) {
+          const moduleQualified = `${this.currentModule}_${expr.name}`;
+          if (this.functionSignatures.has(moduleQualified)) {
+            lookupName16 = moduleQualified;
+            targetLabel16 = moduleQualified;
+          }
+        }
+
+        const callSig = this.functionSignatures.get(lookupName16);
         const funcReturnType = callSig?.returnType;
         const returns16Bit = funcReturnType === "i16" ||
                              funcReturnType === "u16" ||
@@ -1260,7 +1428,7 @@ export class CodeGenerator {
             const paramIs16Bit = param.varType === "i16" ||
                                  param.varType === "u16" ||
                                  param.varType === "ptr";
-            const paramLabel = this.varLabelForProc(expr.name, param.name);
+            const paramLabel = this.varLabelForProc(targetLabel16, param.name);
             if (paramIs16Bit) {
               this.generateExpr16(expr.args[i]);
               this.emit(`  sta ${paramLabel}`);
@@ -1272,13 +1440,14 @@ export class CodeGenerator {
           }
         }
 
-        this.emit(`  jsr ${expr.name}`);
+        this.emit(`  jsr ${targetLabel16}`);
         // If function returns 8-bit, zero-extend to 16-bit
         if (!returns16Bit) {
           this.emit(`  ldx #0`);
         }
         // Result in A (low) and X (high)
         break;
+      }
 
       default:
         // For other expressions, generate 8-bit and zero-extend

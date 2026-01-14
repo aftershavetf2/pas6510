@@ -1,5 +1,5 @@
 // Module resolver for the pas6510 compiler
-// Handles module imports and circular dependency detection
+// Handles module uses and circular dependency detection
 
 import * as fs from "fs";
 import * as path from "path";
@@ -21,8 +21,8 @@ export interface ResolvedModule {
 export interface ResolvedProgram {
   mainModule: ResolvedModule;
   dependencies: ResolvedModule[];
-  // All public symbols available for the main module
-  availableSymbols: Map<string, SymbolInfo>;
+  // Map of module names to their public symbols
+  moduleSymbols: Map<string, Map<string, SymbolInfo>>;
 }
 
 export interface SymbolInfo {
@@ -47,16 +47,13 @@ export class ModuleResolver {
     const visited = new Set<string>();
     this.collectDependencies(mainModule, dependencies, visited);
 
-    // Build symbol table from all public exports
-    const availableSymbols = this.buildSymbolTable(dependencies);
-
-    // Validate that all imports can be satisfied
-    this.validateImports(mainModule, availableSymbols);
+    // Build symbol table per module for qualified access
+    const moduleSymbols = this.buildModuleSymbolTables(dependencies);
 
     return {
       mainModule,
       dependencies,
-      availableSymbols,
+      moduleSymbols,
     };
   }
 
@@ -92,11 +89,11 @@ export class ModuleResolver {
       program,
     };
 
-    // Recursively resolve imports
+    // Recursively resolve uses
     const moduleDir = path.dirname(filePath);
-    for (const imp of program.imports) {
-      const importPath = path.resolve(moduleDir, imp.modulePath);
-      this.resolveModule(importPath);
+    for (const use of program.uses) {
+      const usePath = this.findModule(moduleDir, use.modulePath);
+      this.resolveModule(usePath);
     }
 
     // Mark as resolved
@@ -104,6 +101,27 @@ export class ModuleResolver {
     this.resolvedModules.set(normalizedPath, resolvedModule);
 
     return resolvedModule;
+  }
+
+  private findModule(currentDir: string, modulePath: string): string {
+    // Search for the module in:
+    // 1. Same directory as the importing file
+    // 2. ../lib/ directory
+
+    const searchPaths = [
+      path.resolve(currentDir, modulePath),
+      path.resolve(currentDir, "..", "lib", modulePath),
+    ];
+
+    for (const searchPath of searchPaths) {
+      if (fs.existsSync(searchPath)) {
+        return searchPath;
+      }
+    }
+
+    throw new Error(
+      `Module not found: ${modulePath}\nSearched in:\n${searchPaths.join("\n")}`
+    );
   }
 
   private collectDependencies(
@@ -118,9 +136,10 @@ export class ModuleResolver {
 
     // First, recursively collect dependencies of this module
     const moduleDir = path.dirname(module.filePath);
-    for (const imp of module.program.imports) {
-      const importPath = path.normalize(path.resolve(moduleDir, imp.modulePath));
-      const depModule = this.resolvedModules.get(importPath);
+    for (const use of module.program.uses) {
+      const usePath = this.findModule(moduleDir, use.modulePath);
+      const normalizedPath = path.normalize(usePath);
+      const depModule = this.resolvedModules.get(normalizedPath);
       if (depModule) {
         this.collectDependencies(depModule, result, visited);
       }
@@ -132,22 +151,20 @@ export class ModuleResolver {
     }
   }
 
-  private buildSymbolTable(
+  private buildModuleSymbolTables(
     modules: ResolvedModule[]
-  ): Map<string, SymbolInfo> {
-    const symbols = new Map<string, SymbolInfo>();
+  ): Map<string, Map<string, SymbolInfo>> {
+    const moduleSymbols = new Map<string, Map<string, SymbolInfo>>();
 
     for (const module of modules) {
       const program = module.program;
+      // Use filename-derived module name (e.g., "math.pas" -> "math")
+      const moduleName = path.basename(module.filePath, ".pas");
+      const symbols = new Map<string, SymbolInfo>();
 
       // Add public procedures
       for (const proc of program.procedures) {
         if (proc.isPublic) {
-          if (symbols.has(proc.name)) {
-            throw new Error(
-              `Duplicate symbol '${proc.name}' exported from multiple modules`
-            );
-          }
           symbols.set(proc.name, {
             name: proc.name,
             type: "proc",
@@ -160,11 +177,6 @@ export class ModuleResolver {
       // Add public functions
       for (const func of program.functions) {
         if (func.isPublic) {
-          if (symbols.has(func.name)) {
-            throw new Error(
-              `Duplicate symbol '${func.name}' exported from multiple modules`
-            );
-          }
           symbols.set(func.name, {
             name: func.name,
             type: "func",
@@ -177,11 +189,6 @@ export class ModuleResolver {
       // Add public global variables
       for (const globalVar of program.globals) {
         if (globalVar.isPublic) {
-          if (symbols.has(globalVar.name)) {
-            throw new Error(
-              `Duplicate symbol '${globalVar.name}' exported from multiple modules`
-            );
-          }
           symbols.set(globalVar.name, {
             name: globalVar.name,
             type: "var",
@@ -194,11 +201,6 @@ export class ModuleResolver {
       // Add public global constants
       for (const globalConst of program.globalConsts) {
         if (globalConst.isPublic) {
-          if (symbols.has(globalConst.name)) {
-            throw new Error(
-              `Duplicate symbol '${globalConst.name}' exported from multiple modules`
-            );
-          }
           symbols.set(globalConst.name, {
             name: globalConst.name,
             type: "const",
@@ -207,65 +209,11 @@ export class ModuleResolver {
           });
         }
       }
+
+      moduleSymbols.set(moduleName, symbols);
     }
 
-    return symbols;
+    return moduleSymbols;
   }
 
-  private validateImports(
-    module: ResolvedModule,
-    availableSymbols: Map<string, SymbolInfo>
-  ): void {
-    const moduleDir = path.dirname(module.filePath);
-
-    for (const imp of module.program.imports) {
-      const importPath = path.normalize(path.resolve(moduleDir, imp.modulePath));
-      const importedModule = this.resolvedModules.get(importPath);
-
-      if (!importedModule) {
-        throw new Error(`Module not found: ${imp.modulePath}`);
-      }
-
-      // Check each imported symbol
-      for (const symbolName of imp.names) {
-        // Check if the symbol is exported from the specified module
-        const isExportedFromModule =
-          importedModule.program.procedures.some(
-            (p) => p.name === symbolName && p.isPublic
-          ) ||
-          importedModule.program.functions.some(
-            (f) => f.name === symbolName && f.isPublic
-          ) ||
-          importedModule.program.globals.some(
-            (g) => g.name === symbolName && g.isPublic
-          ) ||
-          importedModule.program.globalConsts.some(
-            (c) => c.name === symbolName && c.isPublic
-          );
-
-        if (!isExportedFromModule) {
-          // Check if symbol exists but is not public
-          const existsButNotPublic =
-            importedModule.program.procedures.some(
-              (p) => p.name === symbolName
-            ) ||
-            importedModule.program.functions.some(
-              (f) => f.name === symbolName
-            ) ||
-            importedModule.program.globals.some((g) => g.name === symbolName) ||
-            importedModule.program.globalConsts.some((c) => c.name === symbolName);
-
-          if (existsButNotPublic) {
-            throw new Error(
-              `Symbol '${symbolName}' in ${imp.modulePath} is not public. Add 'pub' keyword to export it.`
-            );
-          } else {
-            throw new Error(
-              `Symbol '${symbolName}' not found in ${imp.modulePath}`
-            );
-          }
-        }
-      }
-    }
-  }
 }

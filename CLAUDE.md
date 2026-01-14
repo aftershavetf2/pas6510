@@ -34,7 +34,7 @@ npm start        # Run CLI
   - `ast.ts` - AST node types
   - `parser.ts` - Parser (tokens → AST)
   - `codegen.ts` - Code generator (AST → 6510 assembly)
-  - `resolver.ts` - Module resolver (handles imports)
+  - `resolver.ts` - Module resolver (handles use statements)
 - `examples/` - Example programs
 
 ## Language Features
@@ -50,14 +50,14 @@ The pas6510 language is Pascal-like with these differences:
 
 ## Module System
 
-Modules allow code reuse across files using `pub` and `import`.
+Modules allow code reuse across files using `pub` and `use`.
 
 ### Exporting with `pub`
 
 Use `pub` keyword before `proc`, `func`, or `var` to export:
 
 ```pascal
-program math_module
+program math
 
 pub var RESULT: u16;
 
@@ -73,28 +73,29 @@ proc main()
 end;
 ```
 
-### Importing
+### Using Modules
 
-Import statements must appear before `program`:
+Use statements must appear before `program`. Access symbols with `module.symbol` syntax:
 
 ```pascal
-import calc_sum, RESULT from "math.pas";
+use math;
 
 program main
 
 proc main()
-    calc_sum();
-    write_u16_ln(RESULT);
+    math.calc_sum();
+    write_u16_ln(math.RESULT);
 end;
 ```
 
 ### Module Rules
 
-- Import paths are relative to the importing file
-- Transitive imports are supported (modules can import other modules)
-- Circular imports produce a compile error
-- Importing non-public symbols produces an error with helpful message
-- Only `pub` symbols are included in the compiled output from imported modules
+- Module name is derived from filename (e.g., `math.pas` → `math`)
+- Modules are searched in same directory, then in `lib/` directory
+- Transitive uses are supported (modules can use other modules)
+- Circular dependencies produce a compile error
+- All public symbols are accessed with `module.` prefix
+- Only `pub` symbols are accessible from other modules
 
 ## Compiler Pipeline
 

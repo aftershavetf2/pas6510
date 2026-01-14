@@ -13,11 +13,11 @@ start:
 
 ; Module: sys
 ; Procedure: irq_enable
-irq_enable:
+sys_irq_enable:
   rts
 
 ; Procedure: irq_disable
-irq_disable:
+sys_irq_disable:
   rts
 
 ; Main module: irq_test

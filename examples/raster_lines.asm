@@ -13,7 +13,7 @@ start:
 
 ; Module: sys
 ; Procedure: irq_disable
-irq_disable:
+sys_irq_disable:
   rts
 
 ; Main module: raster_lines

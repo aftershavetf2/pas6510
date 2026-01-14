@@ -1,4 +1,4 @@
-import irq_disable from "../lib/sys.pas";
+use sys;
 
 program screen_memory_chaos
 
@@ -6,7 +6,7 @@ proc main()
     var i: u8;
     var x: u8;
 
-    irq_disable();
+    sys.irq_disable();
     
     x := 0;
 

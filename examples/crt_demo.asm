@@ -13,37 +13,37 @@ start:
 
 ; Module: sys
 ; Procedure: memset
-memset:
+sys_memset:
   rts
 
 ; Module: crt
 ; Procedure: crt_init
-crt_init:
+crt_crt_init:
   lda #0
-  sta _var_cursor_x
-  sta _var_cursor_y
+  sta _var_crt_cursor_x
+  sta _var_crt_cursor_y
   lda #14
-  sta _var_text_color
+  sta _var_crt_text_color
   rts
 
 ; Procedure: calc_addr
-calc_addr:
+crt_calc_addr:
   lda #0
   ldx #0
-  sta _var_calc_addr_row_offset
-  stx _var_calc_addr_row_offset+1
-  lda _var_cursor_y
-  sta _var_calc_addr_y_temp
+  sta _var_crt_calc_addr_row_offset
+  stx _var_crt_calc_addr_row_offset+1
+  lda _var_crt_cursor_y
+  sta _var_crt_calc_addr_y_temp
 _while_0:
-  lda _var_calc_addr_y_temp
+  lda _var_crt_calc_addr_y_temp
   cmp #0
   beq _gt_false_2
   bcs _gt_cont_3
 _gt_false_2:
   jmp _endwhile_1
 _gt_cont_3:
-  lda _var_calc_addr_row_offset
-  ldx _var_calc_addr_row_offset+1
+  lda _var_crt_calc_addr_row_offset
+  ldx _var_crt_calc_addr_row_offset+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -55,17 +55,17 @@ _gt_cont_3:
   adc _tmp16+1
   tax
   pla
-  sta _var_calc_addr_row_offset
-  stx _var_calc_addr_row_offset+1
-  dec _var_calc_addr_y_temp
+  sta _var_crt_calc_addr_row_offset
+  stx _var_crt_calc_addr_row_offset+1
+  dec _var_crt_calc_addr_y_temp
   jmp _while_0
 _endwhile_1:
   lda #0
   ldx #4
   sta _tmp16
   stx _tmp16+1
-  lda _var_calc_addr_row_offset
-  ldx _var_calc_addr_row_offset+1
+  lda _var_crt_calc_addr_row_offset
+  ldx _var_crt_calc_addr_row_offset+1
   clc
   adc _tmp16
   pha
@@ -75,7 +75,7 @@ _endwhile_1:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_cursor_x
+  lda _var_crt_cursor_x
   ldx #0
   clc
   adc _tmp16
@@ -84,28 +84,28 @@ _endwhile_1:
   adc _tmp16+1
   tax
   pla
-  sta _var_screen_addr
-  stx _var_screen_addr+1
+  sta _var_crt_screen_addr
+  stx _var_crt_screen_addr+1
   rts
 
 ; Procedure: calc_color_addr
-calc_color_addr:
+crt_calc_color_addr:
   lda #0
   ldx #0
-  sta _var_calc_color_addr_row_offset
-  stx _var_calc_color_addr_row_offset+1
-  lda _var_cursor_y
-  sta _var_calc_color_addr_y_temp
+  sta _var_crt_calc_color_addr_row_offset
+  stx _var_crt_calc_color_addr_row_offset+1
+  lda _var_crt_cursor_y
+  sta _var_crt_calc_color_addr_y_temp
 _while_4:
-  lda _var_calc_color_addr_y_temp
+  lda _var_crt_calc_color_addr_y_temp
   cmp #0
   beq _gt_false_6
   bcs _gt_cont_7
 _gt_false_6:
   jmp _endwhile_5
 _gt_cont_7:
-  lda _var_calc_color_addr_row_offset
-  ldx _var_calc_color_addr_row_offset+1
+  lda _var_crt_calc_color_addr_row_offset
+  ldx _var_crt_calc_color_addr_row_offset+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -117,17 +117,17 @@ _gt_cont_7:
   adc _tmp16+1
   tax
   pla
-  sta _var_calc_color_addr_row_offset
-  stx _var_calc_color_addr_row_offset+1
-  dec _var_calc_color_addr_y_temp
+  sta _var_crt_calc_color_addr_row_offset
+  stx _var_crt_calc_color_addr_row_offset+1
+  dec _var_crt_calc_color_addr_y_temp
   jmp _while_4
 _endwhile_5:
   lda #0
   ldx #216
   sta _tmp16
   stx _tmp16+1
-  lda _var_calc_color_addr_row_offset
-  ldx _var_calc_color_addr_row_offset+1
+  lda _var_crt_calc_color_addr_row_offset
+  ldx _var_crt_calc_color_addr_row_offset+1
   clc
   adc _tmp16
   pha
@@ -137,7 +137,7 @@ _endwhile_5:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_cursor_x
+  lda _var_crt_cursor_x
   ldx #0
   clc
   adc _tmp16
@@ -146,163 +146,171 @@ _endwhile_5:
   adc _tmp16+1
   tax
   pla
-  sta _var_color_addr
-  stx _var_color_addr+1
+  sta _var_crt_color_addr
+  stx _var_crt_color_addr+1
   rts
 
 ; Procedure: clear
-clear:
+crt_clear:
   lda #0
-  sta _var_clear_i
+  sta _var_crt_clear_i
 _for_8:
-  ldy _var_clear_i
+  ldy _var_crt_clear_i
   lda #32
   sta $0400,y
   sta $0500,y
   sta $0600,y
   sta $0700,y
-  lda _var_text_color
+  lda _var_crt_text_color
   sta $d800,y
   sta $d900,y
   sta $da00,y
   sta $db00,y
-  inc _var_clear_i
-  lda _var_clear_i
+  inc _var_crt_clear_i
+  lda _var_crt_clear_i
   bne _for_8
 _endfor_9:
   lda #0
-  sta _var_cursor_x
-  sta _var_cursor_y
+  sta _var_crt_cursor_x
+  sta _var_crt_cursor_y
   rts
 
 ; Procedure: gotoxy
-gotoxy:
-  lda _var_gotoxy_x
-  sta _var_cursor_x
-  lda _var_gotoxy_y
-  sta _var_cursor_y
+crt_gotoxy:
+  lda _var_crt_gotoxy_x
+  sta _var_crt_cursor_x
+  lda _var_crt_gotoxy_y
+  sta _var_crt_cursor_y
   rts
 
 ; Procedure: newline
-newline:
+crt_newline:
   lda #0
-  sta _var_cursor_x
-  inc _var_cursor_y
-  lda _var_cursor_y
-  cmp #25
+  sta _var_crt_cursor_x
+  inc _var_crt_cursor_y
+  lda _var_crt_cursor_y
+  pha
+  lda #25
+  sta _tmp
+  pla
+  cmp _tmp
   bcs _skip_12
   jmp _else_10
 _skip_12:
   lda #0
-  sta _var_cursor_y
+  sta _var_crt_cursor_y
 _else_10:
   rts
 
 ; Procedure: putch
-putch:
-  jsr calc_addr
-  jsr calc_color_addr
-  lda _var_screen_addr
-  ldx _var_screen_addr+1
+crt_putch:
+  jsr crt_calc_addr
+  jsr crt_calc_color_addr
+  lda _var_crt_screen_addr
+  ldx _var_crt_screen_addr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_putch_ch
+  lda _var_crt_putch_ch
   ldy #0
   sta (_poke_addr),y
-  lda _var_color_addr
-  ldx _var_color_addr+1
+  lda _var_crt_color_addr
+  ldx _var_crt_color_addr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
-  inc _var_cursor_x
-  lda _var_cursor_x
-  cmp #40
+  inc _var_crt_cursor_x
+  lda _var_crt_cursor_x
+  pha
+  lda #40
+  sta _tmp
+  pla
+  cmp _tmp
   bcs _skip_15
   jmp _else_13
 _skip_15:
-  jsr newline
+  jsr crt_newline
 _else_13:
   rts
 
 ; Procedure: putc
-putc:
-  lda _var_putc_ch
-  sta _var_putc_sc
+crt_putc:
+  lda _var_crt_putc_ch
+  sta _var_crt_putc_sc
   cmp #65
   bcs _skip_18
   jmp _else_16
 _skip_18:
-  lda _var_putc_sc
+  lda _var_crt_putc_sc
   cmp #90
   beq _le_cont_22
   bcc _le_cont_22
   jmp _else_19
 _le_cont_22:
-  lda _var_putc_sc
+  lda _var_crt_putc_sc
   pha
   lda #64
   sta _tmp
   pla
   sec
   sbc _tmp
-  sta _var_putch_ch
-  jsr putch
+  sta _var_crt_putch_ch
+  jsr crt_putch
   rts
 _else_19:
 _else_16:
-  lda _var_putc_sc
+  lda _var_crt_putc_sc
   cmp #97
   bcs _skip_25
   jmp _else_23
 _skip_25:
-  lda _var_putc_sc
+  lda _var_crt_putc_sc
   cmp #122
   beq _le_cont_29
   bcc _le_cont_29
   jmp _else_26
 _le_cont_29:
-  lda _var_putc_sc
+  lda _var_crt_putc_sc
   pha
   lda #96
   sta _tmp
   pla
   sec
   sbc _tmp
-  sta _var_putch_ch
-  jsr putch
+  sta _var_crt_putch_ch
+  jsr crt_putch
   rts
 _else_26:
 _else_23:
-  lda _var_putc_sc
-  sta _var_putch_ch
-  jsr putch
+  lda _var_crt_putc_sc
+  sta _var_crt_putch_ch
+  jsr crt_putch
   rts
 
 ; Procedure: setcolor
-setcolor:
-  lda _var_setcolor_c
-  sta _var_text_color
+crt_setcolor:
+  lda _var_crt_setcolor_c
+  sta _var_crt_text_color
   rts
 
 ; Procedure: hline
-hline:
+crt_hline:
   lda #0
   ldx #0
-  sta _var_hline_yoff
-  stx _var_hline_yoff+1
-  lda _var_cursor_y
-  sta _var_hline_ytmp
+  sta _var_crt_hline_yoff
+  stx _var_crt_hline_yoff+1
+  lda _var_crt_cursor_y
+  sta _var_crt_hline_ytmp
 _while_30:
-  lda _var_hline_ytmp
+  lda _var_crt_hline_ytmp
   cmp #0
   beq _gt_false_32
   bcs _gt_cont_33
 _gt_false_32:
   jmp _endwhile_31
 _gt_cont_33:
-  lda _var_hline_yoff
-  ldx _var_hline_yoff+1
+  lda _var_crt_hline_yoff
+  ldx _var_crt_hline_yoff+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -314,17 +322,17 @@ _gt_cont_33:
   adc _tmp16+1
   tax
   pla
-  sta _var_hline_yoff
-  stx _var_hline_yoff+1
-  dec _var_hline_ytmp
+  sta _var_crt_hline_yoff
+  stx _var_crt_hline_yoff+1
+  dec _var_crt_hline_ytmp
   jmp _while_30
 _endwhile_31:
   lda #0
   ldx #4
   sta _tmp16
   stx _tmp16+1
-  lda _var_hline_yoff
-  ldx _var_hline_yoff+1
+  lda _var_crt_hline_yoff
+  ldx _var_crt_hline_yoff+1
   clc
   adc _tmp16
   pha
@@ -334,7 +342,7 @@ _endwhile_31:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_cursor_x
+  lda _var_crt_cursor_x
   ldx #0
   clc
   adc _tmp16
@@ -343,14 +351,14 @@ _endwhile_31:
   adc _tmp16+1
   tax
   pla
-  sta _var_hline_saddr
-  stx _var_hline_saddr+1
+  sta _var_crt_hline_saddr
+  stx _var_crt_hline_saddr+1
   lda #0
   ldx #216
   sta _tmp16
   stx _tmp16+1
-  lda _var_hline_yoff
-  ldx _var_hline_yoff+1
+  lda _var_crt_hline_yoff
+  ldx _var_crt_hline_yoff+1
   clc
   adc _tmp16
   pha
@@ -360,7 +368,7 @@ _endwhile_31:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_cursor_x
+  lda _var_crt_cursor_x
   ldx #0
   clc
   adc _tmp16
@@ -369,15 +377,15 @@ _endwhile_31:
   adc _tmp16+1
   tax
   pla
-  sta _var_hline_caddr
-  stx _var_hline_caddr+1
-  lda _var_hline_len
+  sta _var_crt_hline_caddr
+  stx _var_crt_hline_caddr+1
+  lda _var_crt_hline_len
   tay
-  lda _var_hline_ch
+  lda _var_crt_hline_ch
   pha
   sty _tmp
-  lda _var_hline_saddr
-  ldx _var_hline_saddr+1
+  lda _var_crt_hline_saddr
+  ldx _var_crt_hline_saddr+1
   sta _poke_addr
   stx _poke_addr+1
   ldy _tmp
@@ -395,13 +403,13 @@ _memset_full_loop_37:
   iny
   bne _memset_full_loop_37
 _memset_done_34:
-  lda _var_hline_len
+  lda _var_crt_hline_len
   tay
-  lda _var_text_color
+  lda _var_crt_text_color
   pha
   sty _tmp
-  lda _var_hline_caddr
-  ldx _var_hline_caddr+1
+  lda _var_crt_hline_caddr
+  ldx _var_crt_hline_caddr+1
   sta _poke_addr
   stx _poke_addr+1
   ldy _tmp
@@ -419,34 +427,34 @@ _memset_full_loop_41:
   iny
   bne _memset_full_loop_41
 _memset_done_38:
-  lda _var_cursor_x
+  lda _var_crt_cursor_x
   pha
-  lda _var_hline_len
+  lda _var_crt_hline_len
   sta _tmp
   pla
   clc
   adc _tmp
-  sta _var_cursor_x
+  sta _var_crt_cursor_x
   rts
 
 ; Procedure: box
-box:
+crt_box:
   lda #0
   ldx #0
-  sta _var_box_yoff
-  stx _var_box_yoff+1
-  lda _var_box_y
-  sta _var_box_ytmp
+  sta _var_crt_box_yoff
+  stx _var_crt_box_yoff+1
+  lda _var_crt_box_y
+  sta _var_crt_box_ytmp
 _while_42:
-  lda _var_box_ytmp
+  lda _var_crt_box_ytmp
   cmp #0
   beq _gt_false_44
   bcs _gt_cont_45
 _gt_false_44:
   jmp _endwhile_43
 _gt_cont_45:
-  lda _var_box_yoff
-  ldx _var_box_yoff+1
+  lda _var_crt_box_yoff
+  ldx _var_crt_box_yoff+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -458,17 +466,17 @@ _gt_cont_45:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_yoff
-  stx _var_box_yoff+1
-  dec _var_box_ytmp
+  sta _var_crt_box_yoff
+  stx _var_crt_box_yoff+1
+  dec _var_crt_box_ytmp
   jmp _while_42
 _endwhile_43:
   lda #0
   ldx #4
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_yoff
-  ldx _var_box_yoff+1
+  lda _var_crt_box_yoff
+  ldx _var_crt_box_yoff+1
   clc
   adc _tmp16
   pha
@@ -478,7 +486,7 @@ _endwhile_43:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_x
+  lda _var_crt_box_x
   ldx #0
   clc
   adc _tmp16
@@ -487,14 +495,14 @@ _endwhile_43:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_saddr
-  stx _var_box_saddr+1
+  sta _var_crt_box_saddr
+  stx _var_crt_box_saddr+1
   lda #0
   ldx #216
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_yoff
-  ldx _var_box_yoff+1
+  lda _var_crt_box_yoff
+  ldx _var_crt_box_yoff+1
   clc
   adc _tmp16
   pha
@@ -504,7 +512,7 @@ _endwhile_43:
   pla
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_x
+  lda _var_crt_box_x
   ldx #0
   clc
   adc _tmp16
@@ -513,36 +521,36 @@ _endwhile_43:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_caddr
-  stx _var_box_caddr+1
-  lda _var_box_w
+  sta _var_crt_box_caddr
+  stx _var_crt_box_caddr+1
+  lda _var_crt_box_w
   pha
   lda #2
   sta _tmp
   pla
   sec
   sbc _tmp
-  sta _var_box_inner_w
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  sta _var_crt_box_inner_w
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _poke_addr
   stx _poke_addr+1
   lda #112
   ldy #0
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
-  lda _var_box_inner_w
+  lda _var_crt_box_inner_w
   tay
   lda #64
   pha
   sty _tmp
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -571,13 +579,13 @@ _memset_full_loop_49:
   iny
   bne _memset_full_loop_49
 _memset_done_46:
-  lda _var_box_inner_w
+  lda _var_crt_box_inner_w
   tay
-  lda _var_text_color
+  lda _var_crt_text_color
   pha
   sty _tmp
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -606,11 +614,11 @@ _memset_full_loop_53:
   iny
   bne _memset_full_loop_53
 _memset_done_50:
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -638,11 +646,11 @@ _memset_done_50:
   lda #110
   ldy #0
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -667,14 +675,14 @@ _memset_done_50:
   pla
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
   lda #1
-  sta _var_box_i
+  sta _var_crt_box_i
 _while_54:
-  lda _var_box_i
+  lda _var_crt_box_i
   pha
-  lda _var_box_h
+  lda _var_crt_box_h
   pha
   lda #1
   sta _tmp
@@ -687,8 +695,8 @@ _while_54:
   bcc _skip_56
   jmp _endwhile_55
 _skip_56:
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -700,10 +708,10 @@ _skip_56:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_saddr
-  stx _var_box_saddr+1
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  sta _var_crt_box_saddr
+  stx _var_crt_box_saddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -715,26 +723,26 @@ _skip_56:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_caddr
-  stx _var_box_caddr+1
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  sta _var_crt_box_caddr
+  stx _var_crt_box_caddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _poke_addr
   stx _poke_addr+1
   lda #93
   ldy #0
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -761,11 +769,11 @@ _skip_56:
   stx _poke_addr+1
   lda #93
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -790,13 +798,13 @@ _skip_56:
   pla
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
-  inc _var_box_i
+  inc _var_crt_box_i
   jmp _while_54
 _endwhile_55:
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -808,10 +816,10 @@ _endwhile_55:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_saddr
-  stx _var_box_saddr+1
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  sta _var_crt_box_saddr
+  stx _var_crt_box_saddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
   lda #40
@@ -823,28 +831,28 @@ _endwhile_55:
   adc _tmp16+1
   tax
   pla
-  sta _var_box_caddr
-  stx _var_box_caddr+1
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  sta _var_crt_box_caddr
+  stx _var_crt_box_caddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _poke_addr
   stx _poke_addr+1
   lda #109
   ldy #0
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
-  lda _var_box_inner_w
+  lda _var_crt_box_inner_w
   tay
   lda #64
   pha
   sty _tmp
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -873,13 +881,13 @@ _memset_full_loop_60:
   iny
   bne _memset_full_loop_60
 _memset_done_57:
-  lda _var_box_inner_w
+  lda _var_crt_box_inner_w
   tay
-  lda _var_text_color
+  lda _var_crt_text_color
   pha
   sty _tmp
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -908,11 +916,11 @@ _memset_full_loop_64:
   iny
   bne _memset_full_loop_64
 _memset_done_61:
-  lda _var_box_saddr
-  ldx _var_box_saddr+1
+  lda _var_crt_box_saddr
+  ldx _var_crt_box_saddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -940,11 +948,11 @@ _memset_done_61:
   lda #125
   ldy #0
   sta (_poke_addr),y
-  lda _var_box_caddr
-  ldx _var_box_caddr+1
+  lda _var_crt_box_caddr
+  ldx _var_crt_box_caddr+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_box_w
+  lda _var_crt_box_w
   ldx #0
   clc
   adc _tmp16
@@ -969,37 +977,37 @@ _memset_done_61:
   pla
   sta _poke_addr
   stx _poke_addr+1
-  lda _var_text_color
+  lda _var_crt_text_color
   sta (_poke_addr),y
   rts
 
 ; Procedure: putnum
-putnum:
-  lda _var_putnum_num
+crt_putnum:
+  lda _var_crt_putnum_num
   cmp #0
   beq _skip_67
   jmp _else_65
 _skip_67:
   lda #48
-  sta _var_putch_ch
-  jsr putch
+  sta _var_crt_putch_ch
+  jsr crt_putch
   rts
 _else_65:
   lda #0
-  sta _var_putnum_count
-  lda _var_putnum_num
-  ldx _var_putnum_num+1
-  sta _var_putnum_temp
-  stx _var_putnum_temp+1
+  sta _var_crt_putnum_count
+  lda _var_crt_putnum_num
+  ldx _var_crt_putnum_num+1
+  sta _var_crt_putnum_temp
+  stx _var_crt_putnum_temp+1
 _while_68:
-  lda _var_putnum_temp
+  lda _var_crt_putnum_temp
   cmp #0
   beq _gt_false_70
   bcs _gt_cont_71
 _gt_false_70:
   jmp _endwhile_69
 _gt_cont_71:
-  lda _var_putnum_temp
+  lda _var_crt_putnum_temp
   pha
   pha
   lda #10
@@ -1021,18 +1029,18 @@ _gt_cont_71:
   pla
   sec
   sbc _tmp
-  sta _var_putnum_digit
-  lda _var_putnum_count
+  sta _var_crt_putnum_digit
+  lda _var_crt_putnum_count
   tay
-  lda _var_putnum_digit
+  lda _var_crt_putnum_digit
   pha
   lda #48
   sta _tmp
   pla
   clc
   adc _tmp
-  sta _var_putnum_digits,y
-  lda _var_putnum_temp
+  sta _var_crt_putnum_digits,y
+  lda _var_crt_putnum_temp
   pha
   lda #10
   sta _tmp
@@ -1042,25 +1050,25 @@ _gt_cont_71:
   sta _div_b
   jsr _divide
   ldx #0
-  sta _var_putnum_temp
-  stx _var_putnum_temp+1
-  inc _var_putnum_count
+  sta _var_crt_putnum_temp
+  stx _var_crt_putnum_temp+1
+  inc _var_crt_putnum_count
   jmp _while_68
 _endwhile_69:
 _while_72:
-  lda _var_putnum_count
+  lda _var_crt_putnum_count
   cmp #0
   beq _gt_false_74
   bcs _gt_cont_75
 _gt_false_74:
   jmp _endwhile_73
 _gt_cont_75:
-  dec _var_putnum_count
-  lda _var_putnum_count
+  dec _var_crt_putnum_count
+  lda _var_crt_putnum_count
   tay
-  lda _var_putnum_digits,y
-  sta _var_putch_ch
-  jsr putch
+  lda _var_crt_putnum_digits,y
+  sta _var_crt_putch_ch
+  jsr crt_putch
   jmp _while_72
 _endwhile_73:
   rts
@@ -1069,247 +1077,247 @@ _endwhile_73:
 ; Procedure: print_hello
 print_hello:
   lda #72
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #76
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #76
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #79
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #87
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #79
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #82
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #76
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #68
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: print_pas6510
 print_pas6510:
   lda #80
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #65
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #83
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #54
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #53
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #49
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #48
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #67
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #82
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #84
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #68
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #77
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #79
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: print_number_label
 print_number_label:
   lda #78
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #85
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #77
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #66
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #82
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #58
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: print_red
 print_red:
   lda #82
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #68
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: print_green
 print_green:
   lda #71
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #82
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #78
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #32
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: print_blue
 print_blue:
   lda #66
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #76
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #85
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   lda #69
-  sta _var_putc_ch
-  jsr putc
+  sta _var_crt_putc_ch
+  jsr crt_putc
   rts
 
 ; Procedure: main
 main:
-  jsr crt_init
-  jsr clear
+  jsr crt_crt_init
+  jsr crt_clear
   lda #3
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   lda #5
-  sta _var_box_x
+  sta _var_crt_box_x
   lda #2
-  sta _var_box_y
+  sta _var_crt_box_y
   lda #30
-  sta _var_box_w
+  sta _var_crt_box_w
   lda #10
-  sta _var_box_h
-  jsr box
+  sta _var_crt_box_h
+  jsr crt_box
   lda #1
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   lda #14
-  sta _var_gotoxy_x
+  sta _var_crt_gotoxy_x
   lda #4
-  sta _var_gotoxy_y
-  jsr gotoxy
+  sta _var_crt_gotoxy_y
+  jsr crt_gotoxy
   jsr print_hello
   lda #7
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   lda #8
-  sta _var_gotoxy_x
+  sta _var_crt_gotoxy_x
   lda #6
-  sta _var_gotoxy_y
-  jsr gotoxy
+  sta _var_crt_gotoxy_y
+  jsr crt_gotoxy
   jsr print_number_label
   lda #57
   ldx #48
-  sta _var_putnum_num
-  stx _var_putnum_num+1
-  jsr putnum
+  sta _var_crt_putnum_num
+  stx _var_crt_putnum_num+1
+  jsr crt_putnum
   lda #8
-  sta _var_gotoxy_x
-  sta _var_gotoxy_y
-  jsr gotoxy
+  sta _var_crt_gotoxy_x
+  sta _var_crt_gotoxy_y
+  jsr crt_gotoxy
   lda #2
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   jsr print_red
   lda #5
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   jsr print_green
   lda #6
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   jsr print_blue
   lda #14
-  sta _var_setcolor_c
-  jsr setcolor
+  sta _var_crt_setcolor_c
+  jsr crt_setcolor
   lda #0
-  sta _var_gotoxy_x
+  sta _var_crt_gotoxy_x
   lda #20
-  sta _var_gotoxy_y
-  jsr gotoxy
+  sta _var_crt_gotoxy_y
+  jsr crt_gotoxy
   lda #64
-  sta _var_hline_ch
+  sta _var_crt_hline_ch
   lda #40
-  sta _var_hline_len
-  jsr hline
+  sta _var_crt_hline_len
+  jsr crt_hline
   lda #12
-  sta _var_gotoxy_x
+  sta _var_crt_gotoxy_x
   lda #22
-  sta _var_gotoxy_y
-  jsr gotoxy
+  sta _var_crt_gotoxy_y
+  jsr crt_gotoxy
   jsr print_pas6510
   rts
 
@@ -1356,83 +1364,83 @@ _div_done:
 
 
 ; Variables
-_var_memset_addr:
+_var_sys_memset_addr:
   .byte 0, 0
-_var_memset_len:
+_var_sys_memset_len:
   .byte 0
-_var_memset_value:
+_var_sys_memset_value:
   .byte 0
-_var_cursor_x:
+_var_crt_cursor_x:
   .byte 0
-_var_cursor_y:
+_var_crt_cursor_y:
   .byte 0
-_var_text_color:
+_var_crt_text_color:
   .byte 0
-_var_screen_addr:
+_var_crt_screen_addr:
   .byte 0, 0
-_var_color_addr:
+_var_crt_color_addr:
   .byte 0, 0
-_var_calc_addr_row_offset:
+_var_crt_calc_addr_row_offset:
   .byte 0, 0
-_var_calc_addr_y_temp:
+_var_crt_calc_addr_y_temp:
   .byte 0
-_var_calc_color_addr_row_offset:
+_var_crt_calc_color_addr_row_offset:
   .byte 0, 0
-_var_calc_color_addr_y_temp:
+_var_crt_calc_color_addr_y_temp:
   .byte 0
-_var_clear_i:
+_var_crt_clear_i:
   .byte 0
-_var_gotoxy_x:
+_var_crt_gotoxy_x:
   .byte 0
-_var_gotoxy_y:
+_var_crt_gotoxy_y:
   .byte 0
-_var_putch_ch:
+_var_crt_putch_ch:
   .byte 0
-_var_putc_ch:
+_var_crt_putc_ch:
   .byte 0
-_var_putc_sc:
+_var_crt_putc_sc:
   .byte 0
-_var_setcolor_c:
+_var_crt_setcolor_c:
   .byte 0
-_var_hline_ch:
+_var_crt_hline_ch:
   .byte 0
-_var_hline_len:
+_var_crt_hline_len:
   .byte 0
-_var_hline_saddr:
+_var_crt_hline_saddr:
   .byte 0, 0
-_var_hline_caddr:
+_var_crt_hline_caddr:
   .byte 0, 0
-_var_hline_yoff:
+_var_crt_hline_yoff:
   .byte 0, 0
-_var_hline_ytmp:
+_var_crt_hline_ytmp:
   .byte 0
-_var_box_x:
+_var_crt_box_x:
   .byte 0
-_var_box_y:
+_var_crt_box_y:
   .byte 0
-_var_box_w:
+_var_crt_box_w:
   .byte 0
-_var_box_h:
+_var_crt_box_h:
   .byte 0
-_var_box_i:
+_var_crt_box_i:
   .byte 0
-_var_box_saddr:
+_var_crt_box_saddr:
   .byte 0, 0
-_var_box_caddr:
+_var_crt_box_caddr:
   .byte 0, 0
-_var_box_yoff:
+_var_crt_box_yoff:
   .byte 0, 0
-_var_box_ytmp:
+_var_crt_box_ytmp:
   .byte 0
-_var_box_inner_w:
+_var_crt_box_inner_w:
   .byte 0
-_var_putnum_num:
+_var_crt_putnum_num:
   .byte 0, 0
-_var_putnum_digits:
+_var_crt_putnum_digits:
   .byte 0, 0, 0, 0, 0, 0
-_var_putnum_count:
+_var_crt_putnum_count:
   .byte 0
-_var_putnum_temp:
+_var_crt_putnum_temp:
   .byte 0, 0
-_var_putnum_digit:
+_var_crt_putnum_digit:
   .byte 0

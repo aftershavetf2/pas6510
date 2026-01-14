@@ -18,10 +18,10 @@ export interface ASTNode {
   kind: string;
 }
 
-// Import statement
-export interface ImportNode {
-  names: string[];       // imported symbols
-  modulePath: string;    // path to the module
+// Use statement
+export interface UseNode {
+  moduleName: string;    // e.g., "math"
+  modulePath: string;    // e.g., "math.pas" or "../lib/crt.pas"
 }
 
 // Program node - root of AST
@@ -29,7 +29,7 @@ export interface ProgramNode extends ASTNode {
   kind: "Program";
   name: string;
   org?: number;  // Optional origin address
-  imports: ImportNode[];  // Module imports
+  uses: UseNode[];  // Module uses
   globals: GlobalVarDecl[];  // Global variables
   globalConsts: GlobalConstDecl[];  // Global constants
   procedures: ProcedureNode[];
@@ -127,6 +127,7 @@ export interface CallNode extends ASTNode {
   kind: "Call";
   name: string;
   args: ExpressionNode[];
+  moduleName?: string;  // For qualified calls like math.calc_sum()
 }
 
 export interface ReturnNode extends ASTNode {
@@ -161,12 +162,14 @@ export interface StringLiteralNode extends ASTNode {
 export interface VariableNode extends ASTNode {
   kind: "Variable";
   name: string;
+  moduleName?: string;  // For qualified access like math.RESULT
 }
 
 export interface ArrayAccessNode extends ASTNode {
   kind: "ArrayAccess";
   array: string;
   index: ExpressionNode;
+  moduleName?: string;  // For qualified access like math.buffer[i]
 }
 
 export interface BinaryOpNode extends ASTNode {
@@ -186,4 +189,5 @@ export interface CallExprNode extends ASTNode {
   kind: "CallExpr";
   name: string;
   args: ExpressionNode[];
+  moduleName?: string;  // For qualified calls in expressions like math.get_value()
 }

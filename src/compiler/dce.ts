@@ -1,5 +1,6 @@
 // Dead Code Elimination - finds reachable procedures/functions from main()
 
+import * as path from "path";
 import {
   ProgramNode,
   ProcedureNode,
@@ -14,7 +15,12 @@ function collectCallsFromStatements(statements: StatementNode[], calls: Set<stri
   for (const stmt of statements) {
     switch (stmt.kind) {
       case "Call":
-        calls.add(stmt.name);
+        // Handle qualified names (moduleName_funcName)
+        if (stmt.moduleName) {
+          calls.add(`${stmt.moduleName}_${stmt.name}`);
+        } else {
+          calls.add(stmt.name);
+        }
         // Also check arguments for nested function calls
         for (const arg of stmt.args) {
           collectCallsFromExpression(arg, calls);
@@ -54,7 +60,12 @@ function collectCallsFromStatements(statements: StatementNode[], calls: Set<stri
 function collectCallsFromExpression(expr: ExpressionNode, calls: Set<string>): void {
   switch (expr.kind) {
     case "CallExpr":
-      calls.add(expr.name);
+      // Handle qualified names (moduleName_funcName)
+      if (expr.moduleName) {
+        calls.add(`${expr.moduleName}_${expr.name}`);
+      } else {
+        calls.add(expr.name);
+      }
       for (const arg of expr.args) {
         collectCallsFromExpression(arg, calls);
       }
@@ -85,9 +96,19 @@ function collectVarsFromStatements(statements: StatementNode[], vars: Set<string
       case "Assignment":
         // Target variable
         if (stmt.target.kind === "Variable") {
-          vars.add(stmt.target.name);
+          // Handle qualified names (moduleName.varName)
+          if (stmt.target.moduleName) {
+            vars.add(`${stmt.target.moduleName}.${stmt.target.name}`);
+          } else {
+            vars.add(stmt.target.name);
+          }
         } else if (stmt.target.kind === "ArrayAccess") {
-          vars.add(stmt.target.array);
+          // Handle qualified names (moduleName.varName)
+          if (stmt.target.moduleName) {
+            vars.add(`${stmt.target.moduleName}.${stmt.target.array}`);
+          } else {
+            vars.add(stmt.target.array);
+          }
           collectVarsFromExpression(stmt.target.index, vars);
         }
         collectVarsFromExpression(stmt.value, vars);
@@ -120,10 +141,20 @@ function collectVarsFromStatements(statements: StatementNode[], vars: Set<string
 function collectVarsFromExpression(expr: ExpressionNode, vars: Set<string>): void {
   switch (expr.kind) {
     case "Variable":
-      vars.add(expr.name);
+      // Handle qualified names (moduleName.varName)
+      if (expr.moduleName) {
+        vars.add(`${expr.moduleName}.${expr.name}`);
+      } else {
+        vars.add(expr.name);
+      }
       break;
     case "ArrayAccess":
-      vars.add(expr.array);
+      // Handle qualified names (moduleName.varName)
+      if (expr.moduleName) {
+        vars.add(`${expr.moduleName}.${expr.array}`);
+      } else {
+        vars.add(expr.array);
+      }
       collectVarsFromExpression(expr.index, vars);
       break;
     case "CallExpr":
@@ -187,15 +218,47 @@ export function buildCallGraph(resolved: ResolvedProgram): Map<string, Set<strin
   for (const dep of resolved.dependencies) {
     if (dep.filePath === resolved.mainModule.filePath) continue;
 
+    // Use filename-derived module name (e.g., "math.pas" -> "math")
+    const moduleName = path.basename(dep.filePath, ".pas");
+
+    // Build set of module's own procedure/function names for resolving internal calls
+    const moduleFuncs = new Set<string>();
+    for (const p of dep.program.procedures) {
+      moduleFuncs.add(p.name);
+    }
+    for (const f of dep.program.functions) {
+      moduleFuncs.add(f.name);
+    }
+
+    // Include ALL procedures/functions in call graph (not just public ones)
+    // because public procedures may call internal ones
     for (const proc of dep.program.procedures) {
-      if (proc.isPublic) {
-        callGraph.set(proc.name, getCallsFromProcedure(proc));
+      const calls = getCallsFromProcedure(proc);
+      // Qualify internal calls to same module's functions
+      const qualifiedCalls = new Set<string>();
+      for (const call of calls) {
+        // If this is an unqualified call to a function in this module, qualify it
+        if (moduleFuncs.has(call)) {
+          qualifiedCalls.add(`${moduleName}_${call}`);
+        } else {
+          qualifiedCalls.add(call);
+        }
       }
+      callGraph.set(`${moduleName}_${proc.name}`, qualifiedCalls);
     }
     for (const func of dep.program.functions) {
-      if (func.isPublic) {
-        callGraph.set(func.name, getCallsFromFunction(func));
+      const calls = getCallsFromFunction(func);
+      // Qualify internal calls to same module's functions
+      const qualifiedCalls = new Set<string>();
+      for (const call of calls) {
+        // If this is an unqualified call to a function in this module, qualify it
+        if (moduleFuncs.has(call)) {
+          qualifiedCalls.add(`${moduleName}_${call}`);
+        } else {
+          qualifiedCalls.add(call);
+        }
       }
+      callGraph.set(`${moduleName}_${func.name}`, qualifiedCalls);
     }
   }
 
@@ -277,11 +340,29 @@ export function computeUsedVariables(resolved: ResolvedProgram, reachable: Set<s
   for (const dep of resolved.dependencies) {
     if (dep.filePath === resolved.mainModule.filePath) continue;
 
+    // Use filename-derived module name (e.g., "math.pas" -> "math")
+    const moduleName = path.basename(dep.filePath, ".pas");
+
+    // Build set of module's own global variable names for resolving unqualified refs
+    const moduleGlobals = new Set<string>();
+    for (const g of dep.program.globals) {
+      moduleGlobals.add(g.name);
+    }
+    for (const c of dep.program.globalConsts) {
+      moduleGlobals.add(c.name);
+    }
+
     for (const proc of dep.program.procedures) {
-      if (proc.isPublic && reachable.has(proc.name)) {
+      const qualifiedName = `${moduleName}_${proc.name}`;
+      if (proc.isPublic && reachable.has(qualifiedName)) {
         const vars = getVarsFromProcedure(proc);
         for (const v of vars) {
-          usedVars.add(v);
+          // If this is an unqualified reference to module's own global, qualify it
+          if (!v.includes(".") && moduleGlobals.has(v)) {
+            usedVars.add(`${moduleName}.${v}`);
+          } else {
+            usedVars.add(v);
+          }
         }
         for (const param of proc.params) {
           usedVars.add(param.name);
@@ -292,10 +373,16 @@ export function computeUsedVariables(resolved: ResolvedProgram, reachable: Set<s
       }
     }
     for (const func of dep.program.functions) {
-      if (func.isPublic && reachable.has(func.name)) {
+      const qualifiedName = `${moduleName}_${func.name}`;
+      if (func.isPublic && reachable.has(qualifiedName)) {
         const vars = getVarsFromFunction(func);
         for (const v of vars) {
-          usedVars.add(v);
+          // If this is an unqualified reference to module's own global, qualify it
+          if (!v.includes(".") && moduleGlobals.has(v)) {
+            usedVars.add(`${moduleName}.${v}`);
+          } else {
+            usedVars.add(v);
+          }
         }
         for (const param of func.params) {
           usedVars.add(param.name);

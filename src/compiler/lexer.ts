@@ -311,6 +311,9 @@ export class Lexer {
         case ",":
           tokens.push(this.makeToken(TokenType.COMMA, ",", startLine, startColumn));
           break;
+        case ".":
+          tokens.push(this.makeToken(TokenType.DOT, ".", startLine, startColumn));
+          break;
         default:
           throw new Error(`Unexpected character '${ch}' at line ${startLine}, column ${startColumn}`);
       }
