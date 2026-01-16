@@ -44,21 +44,6 @@ pub procedure calc_addr()
     end;
 
     screen_addr := SCREEN_BASE + row_offset + cursor_x;
-end;
-
-{ Calculate color address from cursor position }
-pub procedure calc_color_addr()
-    var row_offset: u16;
-    var y_temp: u8;
-
-    row_offset := 0;
-    y_temp := cursor_y;
-
-    while y_temp > 0 do
-        row_offset := row_offset + 40;
-        dec(y_temp);
-    end;
-
     color_addr := COLOR_BASE + row_offset + cursor_x;
 end;
 
@@ -108,7 +93,6 @@ end;
 { Write screen code character at cursor }
 pub procedure putch(ch: u8)
     calc_addr();
-    calc_color_addr();
 
     poke(screen_addr, ch);
     poke(color_addr, text_color);
