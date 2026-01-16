@@ -57,7 +57,8 @@ _for_9:
 _for_11:
   inc _var_main_i
   lda _var_main_i
-  bne _for_11
+  beq _endfor_12
+  jmp _for_11
 _endfor_12:
   lda #0
   sta $d020

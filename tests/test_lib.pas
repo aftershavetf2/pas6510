@@ -13,7 +13,7 @@ pub var expected_val: u16;
 pub var actual_val: u16;
 
 { Initialize test counters }
-pub proc test_init()
+pub procedure test_init()
     test_count := 0;
     pass_count := 0;
     fail_count := 0;
@@ -21,7 +21,7 @@ pub proc test_init()
 end;
 
 { Print "TEST " }
-pub proc print_test()
+pub procedure print_test()
     print_char(84);
     print_char(69);
     print_char(83);
@@ -30,7 +30,7 @@ pub proc print_test()
 end;
 
 { Print "PASS" with newline }
-pub proc print_pass()
+pub procedure print_pass()
     print_char(80);
     print_char(65);
     print_char(83);
@@ -39,7 +39,7 @@ pub proc print_pass()
 end;
 
 { Print "FAIL" with newline }
-pub proc print_fail()
+pub procedure print_fail()
     print_char(70);
     print_char(65);
     print_char(73);
@@ -48,7 +48,7 @@ pub proc print_fail()
 end;
 
 { Print "  EXPECTED: " }
-pub proc print_expected()
+pub procedure print_expected()
     print_char(32);
     print_char(32);
     print_char(69);
@@ -64,7 +64,7 @@ pub proc print_expected()
 end;
 
 { Print "  ACTUAL:   " }
-pub proc print_actual()
+pub procedure print_actual()
     print_char(32);
     print_char(32);
     print_char(65);
@@ -80,7 +80,7 @@ pub proc print_actual()
 end;
 
 { Assert u16: set expected_val and actual_val before calling }
-pub proc assert_eq()
+pub procedure assert_eq()
     test_count := test_count + 1;
     current_test := test_count;
 
@@ -101,7 +101,7 @@ pub proc assert_eq()
 end;
 
 { Print summary divider }
-pub proc print_results()
+pub procedure print_results()
     print_char(13);
     print_char(45);
     print_char(45);
@@ -115,7 +115,7 @@ pub proc print_results()
 end;
 
 { Print "PASSED: " }
-pub proc print_passed_label()
+pub procedure print_passed_label()
     print_char(80);
     print_char(65);
     print_char(83);
@@ -127,7 +127,7 @@ pub proc print_passed_label()
 end;
 
 { Print "FAILED: " }
-pub proc print_failed_label()
+pub procedure print_failed_label()
     print_char(70);
     print_char(65);
     print_char(73);
@@ -139,7 +139,7 @@ pub proc print_failed_label()
 end;
 
 { Print final test summary }
-pub proc test_summary()
+pub procedure test_summary()
     print_results();
     print_passed_label();
     write_u16_ln(pass_count);
@@ -147,5 +147,5 @@ pub proc test_summary()
     write_u16_ln(fail_count);
 end;
 
-proc main()
+procedure main()
 end;

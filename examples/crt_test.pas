@@ -1,8 +1,13 @@
+use crt;
+
 program crt_test
 
 { Minimal test - write directly to screen memory }
 
 procedure main()
+    crt.crt_init();
+    crt.clear();
+
     var addr: u16;
 
     { Write 'A' (screen code 1) directly to top-left corner }

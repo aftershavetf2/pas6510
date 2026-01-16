@@ -37,11 +37,13 @@ _for_4:
   sta $0700,y
   inc _var_main_i
   lda _var_main_i
-  bne _for_4
+  beq _endfor_5
+  jmp _for_4
 _endfor_5:
   inc _var_main_x
   lda _var_main_x
-  bne _for_2
+  beq _endfor_3
+  jmp _for_2
 _endfor_3:
   jmp _while_0
 _endwhile_1:

@@ -13,27 +13,21 @@ start:
 
 ; Module: test_lib
 ; Procedure: test_init
-test_init:
+test_lib_test_init:
   lda #0
   ldx #0
-  sta _var_test_count
-  stx _var_test_count+1
-  lda #0
-  ldx #0
-  sta _var_pass_count
-  stx _var_pass_count+1
-  lda #0
-  ldx #0
-  sta _var_fail_count
-  stx _var_fail_count+1
-  lda #0
-  ldx #0
-  sta _var_current_test
-  stx _var_current_test+1
+  sta _var_test_lib_test_count
+  stx _var_test_lib_test_count+1
+  sta _var_test_lib_pass_count
+  stx _var_test_lib_pass_count+1
+  sta _var_test_lib_fail_count
+  stx _var_test_lib_fail_count+1
+  sta _var_test_lib_current_test
+  stx _var_test_lib_current_test+1
   rts
 
 ; Procedure: print_test
-print_test:
+test_lib_print_test:
   lda #84
   jsr $ffd2  ; CHROUT
   lda #69
@@ -47,7 +41,7 @@ print_test:
   rts
 
 ; Procedure: print_pass
-print_pass:
+test_lib_print_pass:
   lda #80
   jsr $ffd2  ; CHROUT
   lda #65
@@ -61,7 +55,7 @@ print_pass:
   rts
 
 ; Procedure: print_fail
-print_fail:
+test_lib_print_fail:
   lda #70
   jsr $ffd2  ; CHROUT
   lda #65
@@ -75,7 +69,7 @@ print_fail:
   rts
 
 ; Procedure: print_expected
-print_expected:
+test_lib_print_expected:
   lda #32
   jsr $ffd2  ; CHROUT
   lda #32
@@ -103,7 +97,7 @@ print_expected:
   rts
 
 ; Procedure: print_actual
-print_actual:
+test_lib_print_actual:
   lda #32
   jsr $ffd2  ; CHROUT
   lda #32
@@ -131,9 +125,9 @@ print_actual:
   rts
 
 ; Procedure: assert_eq
-assert_eq:
-  lda _var_test_count
-  ldx _var_test_count+1
+test_lib_assert_eq:
+  lda _var_test_lib_test_count
+  ldx _var_test_lib_test_count+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -145,27 +139,23 @@ assert_eq:
   adc _tmp16+1
   tax
   pla
-  sta _var_test_count
-  stx _var_test_count+1
-  lda _var_test_count
-  ldx _var_test_count+1
-  sta _var_current_test
-  stx _var_current_test+1
-  jsr print_test
-  lda _var_current_test
-  ldx _var_current_test+1
+  sta _var_test_lib_test_count
+  stx _var_test_lib_test_count+1
+  lda _var_test_lib_test_count
+  ldx _var_test_lib_test_count+1
+  sta _var_test_lib_current_test
+  stx _var_test_lib_current_test+1
+  jsr test_lib_print_test
+  lda _var_test_lib_current_test
+  ldx _var_test_lib_current_test+1
   jsr write_u16_ln
-  lda _var_expected_val
-  pha
-  lda _var_actual_val
-  sta _tmp
-  pla
-  cmp _tmp
+  lda _var_test_lib_expected_val
+  cmp _var_test_lib_actual_val
   beq _skip_2
   jmp _else_0
 _skip_2:
-  lda _var_pass_count
-  ldx _var_pass_count+1
+  lda _var_test_lib_pass_count
+  ldx _var_test_lib_pass_count+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -177,13 +167,13 @@ _skip_2:
   adc _tmp16+1
   tax
   pla
-  sta _var_pass_count
-  stx _var_pass_count+1
-  jsr print_pass
+  sta _var_test_lib_pass_count
+  stx _var_test_lib_pass_count+1
+  jsr test_lib_print_pass
   jmp _endif_1
 _else_0:
-  lda _var_fail_count
-  ldx _var_fail_count+1
+  lda _var_test_lib_fail_count
+  ldx _var_test_lib_fail_count+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -195,22 +185,22 @@ _else_0:
   adc _tmp16+1
   tax
   pla
-  sta _var_fail_count
-  stx _var_fail_count+1
-  jsr print_fail
-  jsr print_expected
-  lda _var_expected_val
-  ldx _var_expected_val+1
+  sta _var_test_lib_fail_count
+  stx _var_test_lib_fail_count+1
+  jsr test_lib_print_fail
+  jsr test_lib_print_expected
+  lda _var_test_lib_expected_val
+  ldx _var_test_lib_expected_val+1
   jsr write_u16_ln
-  jsr print_actual
-  lda _var_actual_val
-  ldx _var_actual_val+1
+  jsr test_lib_print_actual
+  lda _var_test_lib_actual_val
+  ldx _var_test_lib_actual_val+1
   jsr write_u16_ln
 _endif_1:
   rts
 
 ; Procedure: print_results
-print_results:
+test_lib_print_results:
   lda #13
   jsr $ffd2  ; CHROUT
   lda #45
@@ -234,7 +224,7 @@ print_results:
   rts
 
 ; Procedure: print_passed_label
-print_passed_label:
+test_lib_print_passed_label:
   lda #80
   jsr $ffd2  ; CHROUT
   lda #65
@@ -254,7 +244,7 @@ print_passed_label:
   rts
 
 ; Procedure: print_failed_label
-print_failed_label:
+test_lib_print_failed_label:
   lda #70
   jsr $ffd2  ; CHROUT
   lda #65
@@ -274,35 +264,33 @@ print_failed_label:
   rts
 
 ; Procedure: test_summary
-test_summary:
-  jsr print_results
-  jsr print_passed_label
-  lda _var_pass_count
-  ldx _var_pass_count+1
+test_lib_test_summary:
+  jsr test_lib_print_results
+  jsr test_lib_print_passed_label
+  lda _var_test_lib_pass_count
+  ldx _var_test_lib_pass_count+1
   jsr write_u16_ln
-  jsr print_failed_label
-  lda _var_fail_count
-  ldx _var_fail_count+1
+  jsr test_lib_print_failed_label
+  lda _var_test_lib_fail_count
+  ldx _var_test_lib_fail_count+1
   jsr write_u16_ln
   rts
 
 ; Module: helper_module
 ; Procedure: set_value
-set_value:
+helper_module_set_value:
   lda #42
   ldx #0
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   rts
 
 ; Procedure: double_value
-double_value:
-  lda _var_shared_value
-  ldx _var_shared_value+1
+helper_module_double_value:
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
   clc
   adc _tmp16
   pha
@@ -310,14 +298,14 @@ double_value:
   adc _tmp16+1
   tax
   pla
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   rts
 
 ; Procedure: inc_counter
-inc_counter:
-  lda _var_counter
-  ldx _var_counter+1
+helper_module_inc_counter:
+  lda _var_helper_module_counter
+  ldx _var_helper_module_counter+1
   sta _tmp16
   stx _tmp16+1
   lda #1
@@ -329,32 +317,32 @@ inc_counter:
   adc _tmp16+1
   tax
   pla
-  sta _var_counter
-  stx _var_counter+1
+  sta _var_helper_module_counter
+  stx _var_helper_module_counter+1
   rts
 
 ; Procedure: reset_counter
-reset_counter:
+helper_module_reset_counter:
   lda #0
   ldx #0
-  sta _var_counter
-  stx _var_counter+1
+  sta _var_helper_module_counter
+  stx _var_helper_module_counter+1
   rts
 
 ; Procedure: calc_sum_10
-calc_sum_10:
+helper_module_calc_sum_10:
   lda #0
   ldx #0
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   lda #1
-  sta _var_i
+  sta _var_helper_module_calc_sum_10_i
 _for_3:
-  lda _var_shared_value
-  ldx _var_shared_value+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_i
+  lda _var_helper_module_calc_sum_10_i
   ldx #0
   clc
   adc _tmp16
@@ -363,10 +351,10 @@ _for_3:
   adc _tmp16+1
   tax
   pla
-  sta _var_shared_value
-  stx _var_shared_value+1
-  inc _var_i
-  lda _var_i
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
+  inc _var_helper_module_calc_sum_10_i
+  lda _var_helper_module_calc_sum_10_i
   cmp #11
   beq _endfor_4
   jmp _for_3
@@ -376,96 +364,93 @@ _endfor_4:
 ; Main module: test_modules
 ; Procedure: main
 main:
-  jsr test_init
-  jsr set_value
+  jsr test_lib_test_init
+  jsr helper_module_set_value
   lda #42
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr double_value
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_double_value
   lda #84
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
   lda #100
   ldx #0
-  sta _var_shared_value
-  stx _var_shared_value+1
-  lda #100
-  ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr reset_counter
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_reset_counter
   lda #0
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_counter
-  ldx _var_counter+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr inc_counter
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_counter
+  ldx _var_helper_module_counter+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_inc_counter
   lda #1
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_counter
-  ldx _var_counter+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr inc_counter
-  jsr inc_counter
-  jsr inc_counter
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_counter
+  ldx _var_helper_module_counter+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_inc_counter
+  jsr helper_module_inc_counter
+  jsr helper_module_inc_counter
   lda #4
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_counter
-  ldx _var_counter+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr calc_sum_10
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_counter
+  ldx _var_helper_module_counter+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_calc_sum_10
   lda #55
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
   lda #10
   ldx #0
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   lda #5
-  ldx #0
-  sta _var_counter
-  stx _var_counter+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
+  sta _var_helper_module_counter
+  stx _var_helper_module_counter+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
   sta _tmp16
   stx _tmp16+1
-  lda _var_counter
-  ldx _var_counter+1
+  lda _var_helper_module_counter
+  ldx _var_helper_module_counter+1
   clc
   adc _tmp16
   pha
@@ -473,26 +458,25 @@ main:
   adc _tmp16+1
   tax
   pla
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   lda #15
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
   lda #20
   ldx #0
-  sta _var_shared_value
-  stx _var_shared_value+1
+  sta _var_helper_module_shared_value
+  stx _var_helper_module_shared_value+1
   lda #60
-  ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
   pha
   lda #3
   sta _tmp
@@ -502,22 +486,22 @@ main:
   sta _mul_b
   jsr _multiply
   ldx #0
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr set_value
-  jsr double_value
-  jsr double_value
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr helper_module_set_value
+  jsr helper_module_double_value
+  jsr helper_module_double_value
   lda #168
   ldx #0
-  sta _var_expected_val
-  stx _var_expected_val+1
-  lda _var_shared_value
-  ldx _var_shared_value+1
-  sta _var_actual_val
-  stx _var_actual_val+1
-  jsr assert_eq
-  jsr test_summary
+  sta _var_test_lib_expected_val
+  stx _var_test_lib_expected_val+1
+  lda _var_helper_module_shared_value
+  ldx _var_helper_module_shared_value+1
+  sta _var_test_lib_actual_val
+  stx _var_test_lib_actual_val+1
+  jsr test_lib_assert_eq
+  jsr test_lib_test_summary
   rts
 
 
@@ -525,8 +509,6 @@ main:
 
 _tmp: .byte 0, 0
 _tmp16: .byte 0, 0
-
-_poke_addr = $fb  ; ZP location for indirect addressing
 
 _mul_a: .byte 0
 _mul_b: .byte 0
@@ -542,23 +524,6 @@ _mul_skip:
   asl _mul_a
   dex
   bne _mul_loop
-  rts
-
-_div_a: .byte 0
-_div_b: .byte 0
-_divide:
-  ldx #0
-  lda _div_a
-_div_loop:
-  cmp _div_b
-  bcc _div_done
-  sec
-  sbc _div_b
-  inx
-  jmp _div_loop
-_div_done:
-  stx _tmp
-  lda _tmp
   rts
 
 ; write_u16_ln - print 16-bit number and newline
@@ -617,21 +582,21 @@ _d10_skip:
   rts
 
 ; Variables
-_var_test_count:
+_var_test_lib_test_count:
   .byte 0, 0
-_var_pass_count:
+_var_test_lib_pass_count:
   .byte 0, 0
-_var_fail_count:
+_var_test_lib_fail_count:
   .byte 0, 0
-_var_current_test:
+_var_test_lib_current_test:
   .byte 0, 0
-_var_expected_val:
+_var_test_lib_expected_val:
   .byte 0, 0
-_var_actual_val:
+_var_test_lib_actual_val:
   .byte 0, 0
-_var_shared_value:
+_var_helper_module_shared_value:
   .byte 0, 0
-_var_counter:
+_var_helper_module_counter:
   .byte 0, 0
-_var_i:
+_var_helper_module_calc_sum_10_i:
   .byte 0

@@ -78,39 +78,44 @@ procedure print_blue()
 end;
 
 procedure main()
+    var i: u8;
+
     crt.crt_init();
-    crt.clear();
 
-    { Draw a box }
-    crt.setcolor(3);
-    crt.box(5, 2, 30, 10);
+    for i = 0 to 255 do
+        crt.clear();
 
-    { Title inside box }
-    crt.setcolor(1);
-    crt.gotoxy(14, 4);
-    print_hello();
+        { Draw a box }
+        crt.setcolor(3);
+        crt.box(5, 2, 30, 10);
 
-    { Show a number }
-    crt.setcolor(7);
-    crt.gotoxy(8, 6);
-    print_number_label();
-    crt.putnum(12345);
+        { Title inside box }
+        crt.setcolor(1);
+        crt.gotoxy(14, 4);
+        print_hello();
 
-    { Color demo }
-    crt.gotoxy(8, 8);
-    crt.setcolor(2);
-    print_red();
-    crt.setcolor(5);
-    print_green();
-    crt.setcolor(6);
-    print_blue();
+        { Show a number }
+        crt.setcolor(7);
+        crt.gotoxy(8, 6);
+        print_number_label();
+        crt.putnum(12345);
 
-    { Footer line }
-    crt.setcolor(14);
-    crt.gotoxy(0, 20);
-    crt.hline(64, 40);
+        { Color demo }
+        crt.gotoxy(8, 8);
+        crt.setcolor(2);
+        print_red();
+        crt.setcolor(5);
+        print_green();
+        crt.setcolor(6);
+        print_blue();
 
-    { Footer text }
-    crt.gotoxy(12, 22);
-    print_pas6510();
+        { Footer line }
+        crt.setcolor(14);
+        crt.gotoxy(0, 20);
+        crt.hline(64, 40);
+
+        { Footer text }
+        crt.gotoxy(12, 22);
+        print_pas6510();
+    end;
 end;
