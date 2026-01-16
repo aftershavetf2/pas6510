@@ -42,12 +42,10 @@ Output:
 
 ## Language
 
-| Pascal      | pas6510                  |
-| ----------- | ------------------------ |
-| `procedure` | `proc`                   |
-| `function`  | `func`                   |
-| `begin`     | `do`                     |
-| `integer`   | `i8`, `i16`, `u8`, `u16` |
+| Pascal    | pas6510                  |
+| --------- | ------------------------ |
+| `begin`   | `do`                     |
+| `integer` | `i8`, `i16`, `u8`, `u16` |
 
 **Types:** `i8`, `i16`, `u8`, `u16`, `ptr`, `array[n] of T`
 
