@@ -36,12 +36,10 @@ _for_4:
   sta $0600,y
   sta $0700,y
   inc _var_main_i
-  lda _var_main_i
   beq _endfor_5
   jmp _for_4
 _endfor_5:
   inc _var_main_x
-  lda _var_main_x
   beq _endfor_3
   jmp _for_2
 _endfor_3:

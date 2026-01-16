@@ -56,7 +56,6 @@ _for_9:
   sta _var_main_i
 _for_11:
   inc _var_main_i
-  lda _var_main_i
   beq _endfor_12
   jmp _for_11
 _endfor_12:

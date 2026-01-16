@@ -39,7 +39,6 @@ _for_0:
   sta $da00,y
   sta $db00,y
   inc _var_crt_clear_i
-  lda _var_crt_clear_i
   beq _endfor_1
   jmp _for_0
 _endfor_1:

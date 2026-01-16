@@ -131,7 +131,6 @@ _for_4:
   sta $da00,y
   sta $db00,y
   inc _var_crt_clear_i
-  lda _var_crt_clear_i
   beq _endfor_5
   jmp _for_4
 _endfor_5:
@@ -1287,7 +1286,6 @@ _for_72:
   jsr crt_gotoxy
   jsr print_pas6510
   inc _var_main_i
-  lda _var_main_i
   beq _endfor_73
   jmp _for_72
 _endfor_73:

@@ -748,25 +748,26 @@ export class CodeGenerator {
     // Increment and compare
     this.emit(`  inc ${this.varLabel(stmt.variable)}`);
 
-    if (useEmbedded) {
-      // Self-modifying code: load from embedded immediate byte
-      this.emit(`  lda #$00`);
-      this.emit(`${this.varLabel(stmt.variable)} = *-1`);
-    } else {
-      // Traditional: load from RAM
-      this.emit(`  lda ${this.varLabel(stmt.variable)}`);
-    }
-
     // Compare with end value (use jmp for long loops)
     if (stmt.end.kind === "NumberLiteral") {
       if (stmt.end.value === 255) {
         // Special case: 0-255 loop - check if wrapped to 0
         // After increment, if i == 0, we've wrapped and should exit
         // Otherwise, loop again
+        // INC sets zero flag, so we can use BEQ directly without loading
         this.emit(`  beq ${endLabel}`);
         this.emit(`  jmp ${loopLabel}`);
         this.emit(`${endLabel}:`);
       } else {
+        // Need to load value for comparison
+        if (useEmbedded) {
+          // Self-modifying code: load from embedded immediate byte
+          this.emit(`  lda #$00`);
+          this.emit(`${this.varLabel(stmt.variable)} = *-1`);
+        } else {
+          // Traditional: load from RAM
+          this.emit(`  lda ${this.varLabel(stmt.variable)}`);
+        }
         this.emit(`  cmp #${stmt.end.value + 1}`);
         this.emit(`  beq ${endLabel}`);
         this.emit(`  jmp ${loopLabel}`);
