@@ -26,6 +26,7 @@ interface Variable {
   address: number;
   size: number;
   scope: string | null;  // null for globals, proc name for locals
+  embedded?: boolean;    // true if variable is embedded in code (self-modifying)
 }
 
 interface Constant {
@@ -153,6 +154,9 @@ export class CodeGenerator {
     this.emit("");
     this.emit("; Variables");
     for (const [key, v] of this.variables) {
+      // Skip embedded variables (they're defined in code segment)
+      if (v.embedded) continue;
+
       // For simple generate(), no module variables exist
       const label = v.scope ? `_var_${v.scope}_${v.name}` : `_var_${v.name}`;
       this.emit(`${label}:`);
@@ -347,6 +351,9 @@ export class CodeGenerator {
     this.emit("");
     this.emit("; Variables");
     for (const [key, v] of this.variables) {
+      // Skip embedded variables (they're defined in code segment)
+      if (v.embedded) continue;
+
       // Generate label: for module variables (key contains "."), use module prefix
       // For local variables (scope set), use scope prefix
       // For global variables, use just the name
@@ -489,8 +496,25 @@ export class CodeGenerator {
     return t === "i16" || t === "u16" || t === "ptr";
   }
 
-  private allocateVariable(decl: VarDecl): Variable {
+  private allocateVariable(decl: VarDecl, embedded: boolean = false): Variable {
     const size = this.getTypeSize(decl.varType);
+
+    if (embedded) {
+      // Embedded variables don't consume RAM - they're stored in code
+      const v: Variable = {
+        name: decl.name,
+        varType: decl.varType,
+        address: 0,  // No RAM address
+        size,
+        scope: this.currentProc,
+        embedded: true,
+      };
+      // Use qualified key for locals: "procName.varName"
+      this.variables.set(`${this.currentProc}.${decl.name}`, v);
+      return v;
+    }
+
+    // Normal RAM allocation
     const address = this.nextRamAddress;
     this.nextRamAddress += size;
 
@@ -699,12 +723,15 @@ export class CodeGenerator {
     const loopLabel = this.newLabel("for");
     const endLabel = this.newLabel("endfor");
 
-    // Ensure loop variable exists
-    if (!this.getVariable(stmt.variable)) {
-      this.allocateVariable({ name: stmt.variable, varType: "u8" });
+    // Ensure loop variable exists - auto-create as embedded if new
+    const existingVar = this.getVariable(stmt.variable);
+    if (!existingVar) {
+      // Auto-create as embedded variable (self-modifying code optimization)
+      this.allocateVariable({ name: stmt.variable, varType: "u8" }, true);
     }
 
     const v = this.getVariable(stmt.variable)!;
+    const useEmbedded = v.embedded === true;
 
     // Initialize loop variable
     this.generateExpr8(stmt.start);
@@ -720,7 +747,15 @@ export class CodeGenerator {
 
     // Increment and compare
     this.emit(`  inc ${this.varLabel(stmt.variable)}`);
-    this.emit(`  lda ${this.varLabel(stmt.variable)}`);
+
+    if (useEmbedded) {
+      // Self-modifying code: load from embedded immediate byte
+      this.emit(`  lda #$00`);
+      this.emit(`${this.varLabel(stmt.variable)} = *-1`);
+    } else {
+      // Traditional: load from RAM
+      this.emit(`  lda ${this.varLabel(stmt.variable)}`);
+    }
 
     // Compare with end value (use jmp for long loops)
     if (stmt.end.kind === "NumberLiteral") {
