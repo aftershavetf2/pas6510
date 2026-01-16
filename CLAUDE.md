@@ -42,10 +42,10 @@ npm start        # Run CLI
 The pas6510 language is Pascal-like with these differences:
 
 - Types: `i8`, `i16`, `u8`, `u16`, `ptr`, `array[n] of T`
-- `func` instead of `function`, `proc` instead of `procedure`
+- `procedure` and `function` keywords (standard Pascal syntax)
 - `do`/`end` instead of `begin`/`end`
 - No recursion (not re-entrant)
-- Main proc required
+- Main procedure required
 - `{ORG 0x1000}` directive to set code origin
 
 ## Module System
@@ -54,14 +54,14 @@ Modules allow code reuse across files using `pub` and `use`.
 
 ### Exporting with `pub`
 
-Use `pub` keyword before `proc`, `func`, or `var` to export:
+Use `pub` keyword before `procedure`, `function`, or `var` to export:
 
 ```pascal
 program math
 
 pub var RESULT: u16;
 
-pub proc calc_sum()
+pub procedure calc_sum()
     var i: u8;
     RESULT := 0;
     for i = 1 to 5 do
@@ -69,7 +69,7 @@ pub proc calc_sum()
     end;
 end;
 
-proc main()
+procedure main()
 end;
 ```
 
@@ -82,7 +82,7 @@ use math;
 
 program main
 
-proc main()
+procedure main()
     math.calc_sum();
     write_u16_ln(math.RESULT);
 end;

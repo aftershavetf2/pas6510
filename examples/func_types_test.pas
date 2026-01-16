@@ -1,52 +1,52 @@
-program func_types_test
+program function_types_test
 
-{ Comprehensive tests for function parameter and return types }
+{ Comprehensive tests for functiontion parameter and return types }
 
-{ ===== 8-bit functions ===== }
+{ ===== 8-bit functiontions ===== }
 
-func identity_u8(x: u8): u8
+function identity_u8(x: u8): u8
     return x;
 end;
 
-func add_u8(a: u8, b: u8): u8
+function add_u8(a: u8, b: u8): u8
     return a + b;
 end;
 
-func double_u8(x: u8): u8
+function double_u8(x: u8): u8
     var temp: u8;
     temp := x + x;
     return temp;
 end;
 
-func const_u8(): u8
+function const_u8(): u8
     return 42;
 end;
 
-{ ===== 16-bit functions ===== }
+{ ===== 16-bit functiontions ===== }
 
-func identity_u16(x: u16): u16
+function identity_u16(x: u16): u16
     return x;
 end;
 
-func add_u16(a: u16, b: u16): u16
+function add_u16(a: u16, b: u16): u16
     return a + b;
 end;
 
-func const_u16(): u16
+function const_u16(): u16
     return 1000;
 end;
 
-func big_const(): u16
+function big_const(): u16
     return 40000;
 end;
 
-{ ===== Mixed type functions ===== }
+{ ===== Mixed type functiontions ===== }
 
-func u8_to_u16(x: u8): u16
+function u8_to_u16(x: u8): u16
     return x;
 end;
 
-func sum_to_u16(a: u8, b: u8): u16
+function sum_to_u16(a: u8, b: u8): u16
     var result: u16;
     result := a;
     result := result + b;
@@ -58,27 +58,27 @@ end;
 pub var global_val: u8;
 pub var global_val16: u16;
 
-proc set_global(x: u8)
+procedure set_global(x: u8)
     global_val := x;
 end;
 
-proc set_global16(x: u16)
+procedure set_global16(x: u16)
     global_val16 := x;
 end;
 
-proc increment_global()
+procedure increment_global()
     global_val := global_val + 1;
 end;
 
 { ===== Test runner ===== }
 
-proc print_ok()
+procedure print_ok()
     print_char(79);  { O }
     print_char(75);  { K }
     print_char(32);  { space }
 end;
 
-proc print_fail()
+procedure print_fail()
     print_char(70);  { F }
     print_char(65);  { A }
     print_char(73);  { I }
@@ -86,11 +86,11 @@ proc print_fail()
     print_char(32);  { space }
 end;
 
-proc newline()
+procedure newline()
     print_char(13);
 end;
 
-proc test_u8_identity()
+procedure test_u8_identity()
     var result: u8;
     result := identity_u8(55);
     if result = 55 then
@@ -100,7 +100,7 @@ proc test_u8_identity()
     end;
 end;
 
-proc test_u8_add()
+procedure test_u8_add()
     var result: u8;
     result := add_u8(10, 20);
     if result = 30 then
@@ -110,7 +110,7 @@ proc test_u8_add()
     end;
 end;
 
-proc test_u8_double()
+procedure test_u8_double()
     var result: u8;
     result := double_u8(25);
     if result = 50 then
@@ -120,7 +120,7 @@ proc test_u8_double()
     end;
 end;
 
-proc test_u8_const()
+procedure test_u8_const()
     var result: u8;
     result := const_u8();
     if result = 42 then
@@ -130,28 +130,28 @@ proc test_u8_const()
     end;
 end;
 
-proc test_u16_const()
+procedure test_u16_const()
     var result: u16;
     result := const_u16();
     { Expected: 1000 - show value }
     write_u16_ln(result);
 end;
 
-proc test_u16_big()
+procedure test_u16_big()
     var result: u16;
     result := big_const();
     { Expected: 40000 - show value }
     write_u16_ln(result);
 end;
 
-proc test_u8_to_u16()
+procedure test_u8_to_u16()
     var result: u16;
     result := u8_to_u16(200);
     { Expected: 200 - show value }
     write_u16_ln(result);
 end;
 
-proc test_procedure()
+procedure test_procedureedure()
     set_global(99);
     if global_val = 99 then
         print_ok();
@@ -160,7 +160,7 @@ proc test_procedure()
     end;
 end;
 
-proc test_proc_increment()
+procedure test_procedure_increment()
     global_val := 10;
     increment_global();
     increment_global();
@@ -171,7 +171,7 @@ proc test_proc_increment()
     end;
 end;
 
-proc main()
+procedure main()
     { Print test header }
     print_char(84);  { T }
     print_char(69);  { E }
@@ -195,8 +195,8 @@ proc main()
     test_u8_to_u16();
 
     { Procedure tests - show OK/FAIL }
-    test_procedure();
-    test_proc_increment();
+    test_procedureedure();
+    test_procedure_increment();
 
     newline();
     print_char(68);  { D }

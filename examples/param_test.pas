@@ -3,27 +3,27 @@ program param_test
 { Simple parameter passing tests }
 
 { Single u8 parameter }
-func inc_u8(x: u8): u8
+function inc_u8(x: u8): u8
     return x + 1;
 end;
 
 { Two u8 parameters }
-func add_u8(a: u8, b: u8): u8
+function add_u8(a: u8, b: u8): u8
     return a + b;
 end;
 
 { Single u16 parameter }
-func inc_u16(x: u16): u16
+function inc_u16(x: u16): u16
     return x + 1;
 end;
 
 { Two u16 parameters }
-func add_u16(a: u16, b: u16): u16
+function add_u16(a: u16, b: u16): u16
     return a + b;
 end;
 
 { Mixed: u8 params, u16 return }
-func mul_u8_to_u16(a: u8, b: u8): u16
+function mul_u8_to_u16(a: u8, b: u8): u16
     var result: u16;
     result := a;
     result := result * b;
@@ -33,18 +33,18 @@ end;
 { Procedure with u8 param }
 pub var last_value: u8;
 
-proc store_u8(x: u8)
+procedure store_u8(x: u8)
     last_value := x;
 end;
 
 { Procedure with u16 param }
 pub var last_value16: u16;
 
-proc store_u16(x: u16)
+procedure store_u16(x: u16)
     last_value16 := x;
 end;
 
-proc main()
+procedure main()
     var r8: u8;
     var r16: u16;
 
@@ -68,11 +68,11 @@ proc main()
     r16 := mul_u8_to_u16(200, 200);
     write_u16_ln(r16);  { Expected: 40000 }
 
-    { Test store_u8 procedure }
+    { Test store_u8 procedureedure }
     store_u8(77);
     write_u16_ln(last_value);  { Expected: 77 }
 
-    { Test store_u16 procedure }
+    { Test store_u16 procedureedure }
     store_u16(12345);
     write_u16_ln(last_value16);  { Expected: 12345 }
 end;

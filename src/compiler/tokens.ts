@@ -3,8 +3,8 @@
 export enum TokenType {
   // Keywords
   PROGRAM = "PROGRAM",
-  PROC = "PROC",
-  FUNC = "FUNC",
+  PROCEDURE = "PROCEDURE",
+  FUNCTION = "FUNCTION",
   VAR = "VAR",
   CONST = "CONST",
   PUB = "PUB",
@@ -77,8 +77,8 @@ export interface Token {
 
 export const KEYWORDS: Record<string, TokenType> = {
   program: TokenType.PROGRAM,
-  proc: TokenType.PROC,
-  func: TokenType.FUNC,
+  procedure: TokenType.PROCEDURE,
+  function: TokenType.FUNCTION,
   var: TokenType.VAR,
   const: TokenType.CONST,
   pub: TokenType.PUB,

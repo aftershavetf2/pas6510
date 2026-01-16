@@ -2,7 +2,7 @@ use math;
 
 program main
 
-proc main()
+procedure main()
     math.set_ten();
     write_u16_ln(math.CONST_TEN);
 

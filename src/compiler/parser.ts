@@ -94,9 +94,9 @@ export class Parser {
         this.advance();
       }
 
-      if (this.match(TokenType.PROC)) {
+      if (this.match(TokenType.PROCEDURE)) {
         procedures.push(this.parseProcedure(isPublic));
-      } else if (this.match(TokenType.FUNC)) {
+      } else if (this.match(TokenType.FUNCTION)) {
         functions.push(this.parseFunction(isPublic));
       } else if (this.match(TokenType.VAR)) {
         globals.push(this.parseGlobalVar(isPublic));
@@ -167,7 +167,7 @@ export class Parser {
   }
 
   private parseProcedure(isPublic: boolean = false): ProcedureNode {
-    this.expect(TokenType.PROC);
+    this.expect(TokenType.PROCEDURE);
     const nameToken = this.expect(TokenType.IDENTIFIER);
     const params = this.parseParams();
 
@@ -201,7 +201,7 @@ export class Parser {
   }
 
   private parseFunction(isPublic: boolean = false): FunctionNode {
-    this.expect(TokenType.FUNC);
+    this.expect(TokenType.FUNCTION);
     const nameToken = this.expect(TokenType.IDENTIFIER);
     const params = this.parseParams();
     this.expect(TokenType.COLON);

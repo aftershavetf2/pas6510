@@ -3,7 +3,7 @@ use sys;
 
 program border_flash
 
-proc main()
+procedure main()
     var y : u8;
     var i : u8;
 

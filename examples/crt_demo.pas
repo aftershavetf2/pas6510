@@ -4,7 +4,7 @@ program crt_demo
 
 { Demo of the CRT module }
 
-proc print_hello()
+procedure print_hello()
     { Print "HELLO WORLD" }
     crt.putc(72);
     crt.putc(69);
@@ -19,7 +19,7 @@ proc print_hello()
     crt.putc(68);
 end;
 
-proc print_pas6510()
+procedure print_pas6510()
     { Print "PAS6510 CRT DEMO" }
     crt.putc(80);
     crt.putc(65);
@@ -39,7 +39,7 @@ proc print_pas6510()
     crt.putc(79);
 end;
 
-proc print_number_label()
+procedure print_number_label()
     { Print "NUMBER: " }
     crt.putc(78);
     crt.putc(85);
@@ -51,7 +51,7 @@ proc print_number_label()
     crt.putc(32);
 end;
 
-proc print_red()
+procedure print_red()
     { Print "RED " }
     crt.putc(82);
     crt.putc(69);
@@ -59,7 +59,7 @@ proc print_red()
     crt.putc(32);
 end;
 
-proc print_green()
+procedure print_green()
     { Print "GREEN " }
     crt.putc(71);
     crt.putc(82);
@@ -69,7 +69,7 @@ proc print_green()
     crt.putc(32);
 end;
 
-proc print_blue()
+procedure print_blue()
     { Print "BLUE" }
     crt.putc(66);
     crt.putc(76);
@@ -77,7 +77,7 @@ proc print_blue()
     crt.putc(69);
 end;
 
-proc main()
+procedure main()
     crt.crt_init();
     crt.clear();
 

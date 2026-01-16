@@ -3,11 +3,11 @@ program math_module
 pub var CONST_TEN: u8;
 pub var RESULT: u16;
 
-pub proc set_ten()
+pub procedure set_ten()
     CONST_TEN := 10;
 end;
 
-pub proc calc_sum()
+pub procedure calc_sum()
     var i: u8;
     RESULT := 0;
     for i = 1 to 5 do
@@ -15,6 +15,6 @@ pub proc calc_sum()
     end;
 end;
 
-proc main()
+procedure main()
     CONST_TEN := 10;
 end;

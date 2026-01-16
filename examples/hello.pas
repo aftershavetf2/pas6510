@@ -1,5 +1,5 @@
 program hello
 
-proc main()
+procedure main()
     write_u16_ln(42);
 end;

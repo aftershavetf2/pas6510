@@ -4,7 +4,7 @@ program irq_test
 
 { Test IRQ enable/disable }
 
-proc main()
+procedure main()
     sys.irq_disable();
 
     { Do something with interrupts disabled }

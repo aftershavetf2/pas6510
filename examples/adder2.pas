@@ -1,6 +1,6 @@
 program adder2
 
-proc main()
+procedure main()
     var sum : u16;
     var i: u8;
 

@@ -2,7 +2,7 @@ use sys;
 
 program screen_memory_chaos
 
-proc main()
+procedure main()
     var i: u8;
     var x: u8;
 

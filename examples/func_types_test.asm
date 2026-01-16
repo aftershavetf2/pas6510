@@ -1,4 +1,4 @@
-; pas6510 compiled program: func_types_test
+; pas6510 compiled program: function_types_test
 ;
 
   .org $0801
@@ -11,7 +11,7 @@ start:
   jsr main
   rts
 
-; Main module: func_types_test
+; Main module: function_types_test
 ; Procedure: set_global
 set_global:
   lda _var_set_global_x
@@ -168,8 +168,8 @@ test_u8_to_u16:
   jsr write_u16_ln
   rts
 
-; Procedure: test_procedure
-test_procedure:
+; Procedure: test_procedureedure
+test_procedureedure:
   lda #99
   sta _var_set_global_x
   jsr set_global
@@ -185,8 +185,8 @@ _else_12:
 _endif_13:
   rts
 
-; Procedure: test_proc_increment
-test_proc_increment:
+; Procedure: test_procedure_increment
+test_procedure_increment:
   lda #10
   sta _var_global_val
   jsr increment_global
@@ -226,8 +226,8 @@ main:
   jsr test_u16_const
   jsr test_u16_big
   jsr test_u8_to_u16
-  jsr test_procedure
-  jsr test_proc_increment
+  jsr test_procedureedure
+  jsr test_procedure_increment
   jsr newline
   lda #68
   jsr $ffd2  ; CHROUT

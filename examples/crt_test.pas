@@ -2,7 +2,7 @@ program crt_test
 
 { Minimal test - write directly to screen memory }
 
-proc main()
+procedure main()
     var addr: u16;
 
     { Write 'A' (screen code 1) directly to top-left corner }

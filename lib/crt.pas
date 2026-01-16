@@ -24,14 +24,14 @@ pub var screen_addr: u16;
 pub var color_addr: u16;
 
 { Initialize CRT module }
-pub proc crt_init()
+pub procedure crt_init()
     cursor_x := 0;
     cursor_y := 0;
     text_color := $0E;
 end;
 
 { Calculate screen address from cursor position }
-pub proc calc_addr()
+pub procedure calc_addr()
     var row_offset: u16;
     var y_temp: u8;
 
@@ -47,7 +47,7 @@ pub proc calc_addr()
 end;
 
 { Calculate color address from cursor position }
-pub proc calc_color_addr()
+pub procedure calc_color_addr()
     var row_offset: u16;
     var y_temp: u8;
 
@@ -62,7 +62,7 @@ pub proc calc_color_addr()
     color_addr := COLOR_BASE + row_offset + cursor_x;
 end;
 
-pub proc clear()
+pub procedure clear()
     var i : u8;
 
     const addr1 : u16 = SCREEN_BASE;
@@ -91,13 +91,13 @@ pub proc clear()
 end;
 
 { Set cursor position }
-pub proc gotoxy(x: u8, y: u8)
+pub procedure gotoxy(x: u8, y: u8)
     cursor_x := x;
     cursor_y := y;
 end;
 
 { Move cursor to beginning of next line }
-pub proc newline()
+pub procedure newline()
     cursor_x := 0;
     inc(cursor_y);
     if cursor_y >= SCREEN_HEIGHT then
@@ -106,7 +106,7 @@ pub proc newline()
 end;
 
 { Write screen code character at cursor }
-pub proc putch(ch: u8)
+pub procedure putch(ch: u8)
     calc_addr();
     calc_color_addr();
 
@@ -120,7 +120,7 @@ pub proc putch(ch: u8)
 end;
 
 { Write PETSCII char converted to screen code }
-pub proc putc(ch: u8)
+pub procedure putc(ch: u8)
     var sc: u8;
     sc := ch;
 
@@ -145,12 +145,12 @@ pub proc putc(ch: u8)
 end;
 
 { Set text color (0-15) }
-pub proc setcolor(c: u8)
+pub procedure setcolor(c: u8)
     text_color := c;
 end;
 
 { Draw horizontal line - optimized with memset }
-pub proc hline(ch: u8, len: u8)
+pub procedure hline(ch: u8, len: u8)
     var saddr: u16;
     var caddr: u16;
     var yoff: u16;
@@ -174,7 +174,7 @@ pub proc hline(ch: u8, len: u8)
 end;
 
 { Fill rectangle with character - optimized with memset }
-pub proc fillrect(x: u8, y: u8, w: u8, h: u8, ch: u8)
+pub procedure fillrect(x: u8, y: u8, w: u8, h: u8, ch: u8)
     var row: u8;
     var saddr: u16;
     var caddr: u16;
@@ -205,7 +205,7 @@ end;
 { Draw box outline - optimized with memset for horizontal lines }
 { Screen codes: 112=top-left, 110=top-right, 109=bottom-left, 125=bottom-right }
 { 64=horizontal line, 93=vertical line }
-pub proc box(x: u8, y: u8, w: u8, h: u8)
+pub procedure box(x: u8, y: u8, w: u8, h: u8)
     var i: u8;
     var saddr: u16;
     var caddr: u16;
@@ -257,7 +257,7 @@ pub proc box(x: u8, y: u8, w: u8, h: u8)
 end;
 
 { Write decimal number at cursor }
-pub proc putnum(num: u16)
+pub procedure putnum(num: u16)
     var digits: array[6] of u8;
     var count: u8;
     var temp: u16;
@@ -285,7 +285,7 @@ pub proc putnum(num: u16)
     end;
 end;
 
-pub proc wait_line(line:u8)
+pub procedure wait_line(line:u8)
     while peek($d011) > 127 do
     end;
 
@@ -293,6 +293,6 @@ pub proc wait_line(line:u8)
     end;
 end;
 
-proc main()
+procedure main()
     crt_init();
 end;
