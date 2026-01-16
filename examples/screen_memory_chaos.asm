@@ -23,16 +23,12 @@ main:
   lda #0
   sta _var_main_x
 _while_0:
-  lda #1
-  bne _skip_2
-  jmp _endwhile_1
-_skip_2:
   lda #0
   sta _var_main_x
-_for_3:
+_for_2:
   lda #0
   sta _var_main_i
-_for_5:
+_for_4:
   ldy _var_main_i
   lda _var_main_x
   sta $0400,y
@@ -41,12 +37,12 @@ _for_5:
   sta $0700,y
   inc _var_main_i
   lda _var_main_i
-  bne _for_5
-_endfor_6:
+  bne _for_4
+_endfor_5:
   inc _var_main_x
   lda _var_main_x
-  bne _for_3
-_endfor_4:
+  bne _for_2
+_endfor_3:
   jmp _while_0
 _endwhile_1:
   rts

@@ -44,13 +44,9 @@ _endwhile_5:
 main:
   sei
 _while_7:
-  lda #1
-  bne _skip_9
-  jmp _endwhile_8
-_skip_9:
   lda #100
   sta _var_main_y
-_for_10:
+_for_9:
   lda _var_main_y
   sta _var_crt_wait_line_line
   jsr crt_wait_line
@@ -58,19 +54,19 @@ _for_10:
   sta $d020
   lda #0
   sta _var_main_i
-_for_12:
+_for_11:
   inc _var_main_i
   lda _var_main_i
-  bne _for_12
-_endfor_13:
+  bne _for_11
+_endfor_12:
   lda #0
   sta $d020
   inc _var_main_y
   lda _var_main_y
   cmp #201
-  beq _endfor_11
-  jmp _for_10
-_endfor_11:
+  beq _endfor_10
+  jmp _for_9
+_endfor_10:
   jmp _while_7
 _endwhile_8:
   rts

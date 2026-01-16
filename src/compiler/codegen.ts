@@ -753,6 +753,29 @@ export class CodeGenerator {
     const loopLabel = this.newLabel("while");
     const endLabel = this.newLabel("endwhile");
 
+    // Optimize constant conditions
+    const constValue = this.getConstantValue(stmt.condition);
+    if (constValue !== null) {
+      if (constValue === 0) {
+        // while 0 do ... end; - condition is always false, skip the entire loop
+        this.emit(`${loopLabel}:`);
+        this.emit(`${endLabel}:`);
+        return;
+      } else {
+        // while 1 do ... end; - infinite loop, no condition check needed
+        this.emit(`${loopLabel}:`);
+
+        // Generate body
+        for (const s of stmt.body) {
+          this.generateStatement(s);
+        }
+
+        this.emit(`  jmp ${loopLabel}`);
+        this.emit(`${endLabel}:`);
+        return;
+      }
+    }
+
     this.emit(`${loopLabel}:`);
 
     // Generate condition

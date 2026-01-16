@@ -21,10 +21,6 @@ sys_irq_disable:
 main:
   sei
 _while_0:
-  lda #1
-  bne _skip_2
-  jmp _endwhile_1
-_skip_2:
   lda $d012
   sta $d020
   jmp _while_0
