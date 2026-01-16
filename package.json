@@ -10,8 +10,8 @@
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "tsx watch src/cli.ts",
-    "tests": "npm run build && node scripts/test.js",
-    "examples": "node scripts/test.js"
+    "examples": "npm run build && node scripts/test.js",
+    "tests": "npm run build && node scripts/run-tests.js"
   },
   "repository": {
     "type": "git",

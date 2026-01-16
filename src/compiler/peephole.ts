@@ -145,7 +145,12 @@ function eliminateRedundantLoads(instructions: Instruction[]): { result: Instruc
     // Update register state based on instruction
     switch (mn) {
       case "lda":
-        regState.a = op;
+        // Indexed loads (with ,y or ,x) invalidate register state since value depends on index register
+        if (op.includes(",")) {
+          regState.a = null;
+        } else {
+          regState.a = op;
+        }
         break;
       case "ldx":
         regState.x = op;

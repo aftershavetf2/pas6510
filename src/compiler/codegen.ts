@@ -761,7 +761,10 @@ export class CodeGenerator {
     if (stmt.end.kind === "NumberLiteral") {
       if (stmt.end.value === 255) {
         // Special case: 0-255 loop - check if wrapped to 0
-        this.emit(`  bne ${loopLabel}`);
+        // After increment, if i == 0, we've wrapped and should exit
+        // Otherwise, loop again
+        this.emit(`  beq ${endLabel}`);
+        this.emit(`  jmp ${loopLabel}`);
         this.emit(`${endLabel}:`);
       } else {
         this.emit(`  cmp #${stmt.end.value + 1}`);
